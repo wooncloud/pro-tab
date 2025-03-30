@@ -1,6 +1,9 @@
 <script>
-  import { Tabs, TabsContent, TabsList, TabsTrigger } from "$lib/components/ui/tabs";
+  import * as Tabs from "$lib/components/ui/tabs";
   import { Input } from "$lib/components/ui/input";
+  import { Button } from "$lib/components/ui/button";
+  import { Checkbox } from "$lib/components/ui/checkbox";
+  import { Label } from "$lib/components/ui/label/index.js";
   
   // Todo 샘플 데이터
   export let todos = [
@@ -32,44 +35,55 @@
   }
 </script>
 
-<aside class="w-80 p-4 border-l">
-  <Tabs defaultValue="todos" class="w-full">
-    <TabsList class="grid w-full grid-cols-2">
-      <TabsTrigger value="todos">할 일</TabsTrigger>
-      <TabsTrigger value="memo">메모</TabsTrigger>
-    </TabsList>
-    <TabsContent value="todos" class="pt-4">
-      <div class="mb-4 flex">
-        <Input 
-          type="text" 
-          placeholder="할 일 추가..." 
-          bind:value={newTodo}
-          on:keypress={(e) => e.key === 'Enter' && addTodo()}
-          class="flex-1"
-        />
-      </div>
-      <ul class="space-y-2">
-        {#each todos as todo (todo.id)}
-          <li class="flex items-center">
-            <input 
-              type="checkbox" 
-              checked={todo.completed} 
-              on:change={() => toggleTodo(todo.id)}
-              class="mr-2 h-4 w-4 rounded border-gray-300 focus:ring-primary"
-            />
-            <span class={todo.completed ? "line-through text-muted-foreground" : ""}>
-              {todo.text}
-            </span>
-          </li>
-        {/each}
-      </ul>
-    </TabsContent>
-    <TabsContent value="memo" class="pt-4">
-      <textarea 
-        bind:value={memo}
-        class="w-full h-48 p-2 rounded-md border border-input resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-        placeholder="메모를 입력하세요..."
-      ></textarea>
-    </TabsContent>
-  </Tabs>
+<aside class="w-80 border-l h-full flex flex-col">
+  <div class="p-4 h-full flex flex-col">
+    <Tabs.Root value="todos" class="w-full h-full flex flex-col">
+      <Tabs.List class="grid w-full grid-cols-2">
+        <Tabs.Trigger value="todos">할 일</Tabs.Trigger>
+        <Tabs.Trigger value="memo">메모</Tabs.Trigger>
+      </Tabs.List>
+      
+      <Tabs.Content value="todos" class="flex-1 overflow-hidden mt-2">
+        <div class="mb-4 flex space-x-2">
+          <Input 
+            type="text" 
+            placeholder="할 일 추가..." 
+            bind:value={newTodo}
+            on:keypress={(e) => e.key === 'Enter' && addTodo()}
+            class="flex-1"
+          />
+          <Button on:click={addTodo} size="sm">추가</Button>
+        </div>
+        <div class="overflow-y-auto h-[calc(100%-50px)] pr-1">
+          <ul class="space-y-2">
+            {#each todos as todo (todo.id)}
+              <li class="hover:bg-muted/50 rounded-md">
+                <div class="flex items-center space-x-2 p-2">
+                  <Checkbox 
+                    id={`todo-${todo.id}`} 
+                    checked={todo.completed}
+                    onCheckedChange={() => toggleTodo(todo.id)}
+                  />
+                  <Label 
+                    for={`todo-${todo.id}`}
+                    class={todo.completed ? "line-through text-muted-foreground cursor-pointer" : "cursor-pointer"}
+                  >
+                    {todo.text}
+                  </Label>
+                </div>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      </Tabs.Content>
+      
+      <Tabs.Content value="memo" class="flex-1 overflow-hidden mt-2">
+        <textarea 
+          bind:value={memo}
+          class="w-full h-full p-2 rounded-md border border-input resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="메모를 입력하세요..."
+        ></textarea>
+      </Tabs.Content>
+    </Tabs.Root>
+  </div>
 </aside> 
