@@ -149,23 +149,6 @@
     />
     
     <div class="flex items-center space-x-1">
-      <!-- 저장 상태 표시 -->
-      {#if saveStatus === "saving"}
-        <div class="flex items-center text-xs text-muted-foreground mr-2">
-          <Clock class="h-3 w-3 mr-1 animate-spin" />
-          <span>저장 중...</span>
-        </div>
-      {:else if saveStatus === "saved"}
-        <div class="flex items-center text-xs text-green-600 mr-2">
-          <Save class="h-3 w-3 mr-1" />
-          <span>저장됨</span>
-        </div>
-      {:else if saveStatus === "error"}
-        <div class="flex items-center text-xs text-destructive mr-2">
-          <span>저장 실패</span>
-        </div>
-      {/if}
-      
       {#if !readOnly && !fullScreenMode}
         <!-- 확장 버튼 (작은 화면에서만 표시) -->
         <button
@@ -220,6 +203,27 @@
       on:input={handleContentChange}
     ></textarea>
   </div>
+  
+  <!-- 저장 상태 표시 -->
+  {#if saveStatus !== "idle"}
+    <div class="flex justify-end items-center py-1 border-t mt-2">
+      {#if saveStatus === "saving"}
+        <div class="flex items-center text-xs text-muted-foreground">
+          <Clock class="h-3 w-3 mr-1 animate-spin" />
+          <span>저장 중...</span>
+        </div>
+      {:else if saveStatus === "saved"}
+        <div class="flex items-center text-xs text-green-600">
+          <Save class="h-3 w-3 mr-1" />
+          <span>저장됨</span>
+        </div>
+      {:else if saveStatus === "error"}
+        <div class="flex items-center text-xs text-destructive">
+          <span>저장 실패</span>
+        </div>
+      {/if}
+    </div>
+  {/if}
   
   <!-- 단축키 안내 -->
   <div class="text-xs text-muted-foreground pt-2 border-t mt-2">

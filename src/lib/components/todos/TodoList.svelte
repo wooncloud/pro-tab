@@ -12,6 +12,7 @@
   export let onEdit;
   export let onDelete;
   export let onAdd;
+  export let onDeleteAll;
   
   // 상태
   let newTodoText = "";
@@ -130,10 +131,20 @@
             진행률: {completionPercentage}%
           </span>
         </div>
-        <div class="text-right">
+        <div class="flex items-center gap-2">
           <span class="text-xs font-semibold inline-block text-primary">
             {completedCount}/{todos.length}
           </span>
+          {#if todos.length > 0}
+            <button
+              class="text-destructive hover:bg-destructive/10 rounded-full p-0.5 transition-colors"
+              title="모든 할 일 삭제"
+              aria-label="모든 할 일 삭제"
+              on:click={onDeleteAll}
+            >
+              <Trash2 class="h-3 w-3" />
+            </button>
+          {/if}
         </div>
       </div>
       <div class="overflow-hidden h-2 text-xs flex rounded bg-primary/20">

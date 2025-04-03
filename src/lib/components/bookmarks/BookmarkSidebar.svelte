@@ -9,7 +9,6 @@
   import AddBookmarkPopover from './AddBookmarkPopover.svelte';
   import AddFolderPopover from './AddFolderPopover.svelte';
   import EditDialog from './EditDialog.svelte';
-  import DeleteDialog from './DeleteDialog.svelte';
   
   // 싱글톤 체크 - 컴포넌트가 이미 있으면 비어있는 div 반환
   let shouldRender = true;
@@ -32,12 +31,6 @@
   let editFolderName = "";
   let editBookmarkName = "";
   let editBookmarkUrl = "";
-  
-  // 삭제 확인 관련 상태
-  let isDeleteDialogOpen = false;
-  let deletingFolder = null;
-  let deletingBookmark = null;
-  let deletingFolderId = null;
   
   // 컴포넌트 마운트 시 확인
   onMount(() => {
@@ -277,57 +270,33 @@
     editBookmarkUrl = "";
   }
 
-  // 북마크 삭제 확인 대화상자 열기
-  function confirmDeleteBookmark(folderId, bookmark) {
-    deletingFolderId = folderId;
-    deletingBookmark = bookmark;
-    deletingFolder = null;
-    isDeleteDialogOpen = true;
-  }
-
-  // 폴더 삭제 확인 대화상자 열기
-  function confirmDeleteFolder(folder) {
-    deletingFolder = folder;
-    deletingBookmark = null;
-    deletingFolderId = null;
-    isDeleteDialogOpen = true;
-  }
-
-  // 삭제 실행
-  function executeDelete() {
-    if (deletingBookmark) {
-      // 북마크 삭제
-      bookmarks = bookmarks.map(folder => {
-        if (folder.id === deletingFolderId) {
-          return {
-            ...folder,
-            bookmarks: folder.bookmarks.filter(b => b.id !== deletingBookmark.id)
-          };
-        }
-        return folder;
-      });
-    } else if (deletingFolder) {
-      // 미분류 폴더 삭제 방지
-      if (deletingFolder.title === UNCATEGORIZED_FOLDER_NAME) {
-        // 미분류 폴더는 삭제할 수 없음
-        closeDeleteDialog();
-        return;
+  // 북마크 직접 삭제 (다이얼로그 없이)
+  function deleteBookmark(folderId, bookmark) {
+    // 북마크 삭제
+    bookmarks = bookmarks.map(folder => {
+      if (folder.id === folderId) {
+        return {
+          ...folder,
+          bookmarks: folder.bookmarks.filter(b => b.id !== bookmark.id)
+        };
       }
-      
-      // 폴더 삭제
-      bookmarks = bookmarks.filter(folder => folder.id !== deletingFolder.id);
-    }
+      return folder;
+    });
     
     saveBookmarksAndUpdateStore(bookmarks);
-    closeDeleteDialog();
   }
 
-  // 삭제 대화상자 닫기
-  function closeDeleteDialog() {
-    isDeleteDialogOpen = false;
-    deletingFolder = null;
-    deletingBookmark = null;
-    deletingFolderId = null;
+  // 폴더 직접 삭제 (다이얼로그 없이)
+  function deleteFolder(folder) {
+    // 미분류 폴더 삭제 방지
+    if (folder.title === UNCATEGORIZED_FOLDER_NAME) {
+      // 미분류 폴더는 삭제할 수 없음
+      return;
+    }
+    
+    // 폴더 삭제
+    bookmarks = bookmarks.filter(f => f.id !== folder.id);
+    saveBookmarksAndUpdateStore(bookmarks);
   }
   
   // 북마크 저장 및 스토어 업데이트 함수
@@ -426,9 +395,9 @@
                 {folder}
                 onToggleFolder={toggleFolder}
                 onEditFolder={startEditFolder}
-                onDeleteFolder={confirmDeleteFolder}
+                onDeleteFolder={deleteFolder}
                 onEditBookmark={startEditBookmark}
-                onDeleteBookmark={confirmDeleteBookmark}
+                onDeleteBookmark={deleteBookmark}
               />
             {/each}
           </ul>
@@ -447,14 +416,5 @@
     bind:editBookmarkUrl
     onSave={saveEdit}
     onClose={closeEditDialog}
-  />
-
-  <!-- 삭제 확인 다이얼로그 -->
-  <DeleteDialog
-    bind:isOpen={isDeleteDialogOpen}
-    bind:deletingFolder
-    bind:deletingBookmark
-    onDelete={executeDelete}
-    onClose={closeDeleteDialog}
   />
 {/if} 

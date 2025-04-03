@@ -1,0 +1,35 @@
+/* 새 탭 페이지용 스타일 */
+
+/* 크롬 기본 포커스 링 제거 */
+*:focus {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+button:focus,
+a:focus,
+[contenteditable]:focus,
+[tabindex]:focus {
+  outline: 0 !important;
+  outline-color: transparent !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* CSS 변수로 인해 적용이 안 되는 경우를 대비해 전역 스타일 설정 */
+html {
+  --focus-ring-color: transparent !important;
+}
+
+*::selection {
+  background-color: rgba(var(--primary), 0.2);
+} 

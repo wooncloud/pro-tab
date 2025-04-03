@@ -3,7 +3,6 @@
   import { loadTodos, saveTodos } from './TodoStorage';
   import TodoList from './TodoList.svelte';
   import EditTodoDialog from './EditTodoDialog.svelte';
-  import DeleteTodoDialog from './DeleteTodoDialog.svelte';
   
   // 할 일 데이터
   let todos = [];
@@ -13,10 +12,6 @@
   // 편집 상태
   let isEditDialogOpen = false;
   let editingTodo = null;
-  
-  // 삭제 상태
-  let isDeleteDialogOpen = false;
-  let deletingTodo = null;
   
   // 컴포넌트 마운트 시 데이터 로드
   onMount(async () => {
@@ -88,25 +83,18 @@
     editingTodo = null;
   }
   
-  // 할 일 삭제 시작
-  function startDeleteTodo(todo) {
-    deletingTodo = todo;
-    isDeleteDialogOpen = true;
-  }
-  
-  // 할 일 삭제 실행
-  function executeDeleteTodo(todo) {
+  // 할 일 삭제 - 확인 다이얼로그 없이 직접 삭제
+  function deleteTodo(todo) {
     if (todo && todo.id) {
       todos = todos.filter(t => t.id !== todo.id);
       saveTodos(todos);
     }
-    closeDeleteDialog();
   }
   
-  // 삭제 다이얼로그 닫기
-  function closeDeleteDialog() {
-    isDeleteDialogOpen = false;
-    deletingTodo = null;
+  // 모든 할 일 삭제
+  function deleteAllTodos() {
+    todos = [];
+    saveTodos(todos);
   }
 </script>
 
@@ -130,8 +118,9 @@
       {todos}
       onToggle={toggleTodo}
       onEdit={startEditTodo}
-      onDelete={startDeleteTodo}
+      onDelete={deleteTodo}
       onAdd={addTodo}
+      onDeleteAll={deleteAllTodos}
     />
   {/if}
   
@@ -141,13 +130,5 @@
     todo={editingTodo}
     onSave={saveEditTodo}
     onClose={closeEditDialog}
-  />
-  
-  <!-- 삭제 확인 다이얼로그 -->
-  <DeleteTodoDialog
-    bind:isOpen={isDeleteDialogOpen}
-    todo={deletingTodo}
-    onDelete={executeDeleteTodo}
-    onClose={closeDeleteDialog}
   />
 </div> 

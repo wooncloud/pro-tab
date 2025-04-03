@@ -1,7 +1,9 @@
 import '../app.css';
-import NewTab from './NewTab.svelte';
+import './index.css';
+import './style.css';
+import App from './NewTab.svelte';
 
-const app = new NewTab({
+const app = new App({
   target: document.getElementById('app')
 });
 

@@ -3,7 +3,6 @@
   import { loadMemos, saveMemo, deleteMemo } from './MemoStorage';
   import MemoList from './MemoList.svelte';
   import MemoEditor from './MemoEditor.svelte';
-  import DeleteMemoDialog from './DeleteMemoDialog.svelte';
   import * as Sheet from "$lib/components/ui/sheet";
   import * as Separator from "$lib/components/ui/separator";
   
@@ -14,8 +13,6 @@
   let isLoading = true;
   let loadError = null;
   let searchQuery = "";
-  let isDeleteDialogOpen = false;
-  let memoToDelete = null;
   let isSheetOpen = false;
   let sheetMemo = null;
   
@@ -84,13 +81,7 @@
     }
   }
   
-  // 메모 삭제 확인 핸들러
-  function handleConfirmDelete(event) {
-    memoToDelete = event.detail;
-    isDeleteDialogOpen = true;
-  }
-  
-  // 메모 삭제 실행 핸들러
+  // 메모 삭제 실행 핸들러 - 확인 다이얼로그 없이 바로 삭제
   async function handleDeleteMemo(event) {
     const memo = event.detail;
     
@@ -202,19 +193,11 @@
             memo={sheetMemo}
             fullScreenMode={true}
             on:save={handleSheetSave}
-            on:delete={handleConfirmDelete}
+            on:delete={handleDeleteMemo}
             on:close={() => isSheetOpen = false}
           />
         {/if}
       </div>
     </Sheet.Content>
   </Sheet.Root>
-  
-  <!-- 삭제 확인 다이얼로그 -->
-  <DeleteMemoDialog
-    bind:isOpen={isDeleteDialogOpen}
-    memo={memoToDelete}
-    on:delete={handleDeleteMemo}
-    on:close={() => isDeleteDialogOpen = false}
-  />
 </div> 
