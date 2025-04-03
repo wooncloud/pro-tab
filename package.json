@@ -16,7 +16,8 @@
     "dev:popup": "vite --open src/popup/popup.html",
     "dev:newtab": "vite --open src/newtab/index.html",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:newtab": "vite preview --open src/newtab/index.html"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.3",

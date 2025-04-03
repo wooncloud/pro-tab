@@ -8,7 +8,7 @@
     배경 변경
   </Button>
   
-  <a href="#" class="text-sm text-muted-foreground hover:text-primary">
+  <Button variant="link" class="text-sm text-muted-foreground hover:text-primary h-auto p-0">
     개발자 후원하기
-  </a>
+  </Button>
 </footer> 
