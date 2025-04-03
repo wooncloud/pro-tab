@@ -1,9 +1,31 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import axios from "axios";
+  import { 
+    fetchWeatherByCoords, 
+    fetchWeatherByCity, 
+    getUserLocation,
+    WEATHER_UPDATE_INTERVAL
+  } from "$lib/components/weather/weatherService";
+  import WeatherDisplay from "$lib/components/weather/WeatherDisplay.svelte";
+  import { 
+    Sun, 
+    Cloud, 
+    CloudRain, 
+    CloudSnow, 
+    CloudFog, 
+    CloudLightning, 
+    CloudDrizzle,
+    Loader2
+  } from "lucide-svelte";
   
   // 날씨 데이터 (기본값)
-  export let weather = { condition: "로딩 중...", temperature: "", location: "" };
+  let weather = { 
+    condition: "로딩 중...", 
+    temperature: "", 
+    location: "",
+    icon: "",
+    weatherId: null
+  };
   
   // 사용자 위치
   let userLocation = {
@@ -16,57 +38,90 @@
   // 타이머 ID 저장 변수
   let weatherUpdateTimer;
   
-  // 날씨 업데이트 간격 (1시간)
-  const WEATHER_UPDATE_INTERVAL = 60 * 60 * 1000;
-  
-  // 사용자 위치 가져오기
-  async function getUserLocation() {
-    if (!navigator.geolocation) {
-      userLocation.error = "브라우저가 위치 정보를 지원하지 않습니다.";
-      userLocation.loading = false;
-      return;
+  // 날씨 ID에 따른 아이콘 매핑
+  // OpenWeatherMap API 날씨 코드: https://openweathermap.org/weather-conditions
+  const getWeatherIcon = (weatherId) => {
+    if (!weatherId) return null;
+    
+    // Group 2xx: 뇌우
+    if (weatherId >= 200 && weatherId < 300) {
+      return CloudLightning;
+    }
+    // Group 3xx: 이슬비
+    else if (weatherId >= 300 && weatherId < 400) {
+      return CloudDrizzle;
+    }
+    // Group 5xx: 비
+    else if (weatherId >= 500 && weatherId < 600) {
+      return CloudRain;
+    }
+    // Group 6xx: 눈
+    else if (weatherId >= 600 && weatherId < 700) {
+      return CloudSnow;
+    }
+    // Group 7xx: 대기 상태(안개, 연무 등)
+    else if (weatherId >= 700 && weatherId < 800) {
+      return CloudFog;
+    }
+    // Group 800: 맑음
+    else if (weatherId === 800) {
+      return Sun;
+    }
+    // Group 80x: 구름
+    else if (weatherId > 800 && weatherId < 900) {
+      return Cloud;
     }
     
-    try {
-      // 위치 정보 권한 요청
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        });
-      });
-      
-      userLocation = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        error: null,
-        loading: false
-      };
-      
-      // 위치를 기반으로 날씨 정보 가져오기
-      fetchWeatherByCoords(userLocation.latitude, userLocation.longitude);
-      
-    } catch (error) {
-      console.error("위치 정보를 가져오는 중 오류 발생:", error);
-      userLocation = {
-        latitude: null,
-        longitude: null,
-        error: "위치 정보를 가져올 수 없습니다.",
-        loading: false
-      };
-      
-      // 위치 정보를 가져오지 못한 경우 기본 도시 사용
-      fetchWeatherByCity("Seoul");
+    return null;
+  };
+  
+  // 날씨 코드에 따른 색상 클래스
+  const getWeatherColorClass = (weatherId) => {
+    if (!weatherId) return "";
+    
+    if (weatherId >= 200 && weatherId < 300) { // 뇌우
+      return "text-yellow-500";
+    } else if (weatherId >= 300 && weatherId < 400) { // 이슬비
+      return "text-blue-400";
+    } else if (weatherId >= 500 && weatherId < 600) { // 비
+      return "text-blue-500";
+    } else if (weatherId >= 600 && weatherId < 700) { // 눈
+      return "text-blue-200";
+    } else if (weatherId >= 700 && weatherId < 800) { // 안개
+      return "text-gray-400";
+    } else if (weatherId === 800) { // 맑음
+      return "text-yellow-400";
+    } else if (weatherId > 800 && weatherId < 900) { // 구름
+      return "text-gray-500";
+    }
+    
+    return "";
+  };
+  
+  // 날씨 정보 업데이트 함수
+  async function updateWeather() {
+    if (userLocation.latitude && userLocation.longitude) {
+      weather = await fetchWeatherByCoords(userLocation.latitude, userLocation.longitude);
+    } else {
+      weather = await fetchWeatherByCity("Seoul");
     }
   }
   
-  // 날씨 정보 업데이트 함수
-  function updateWeather() {
-    if (userLocation.latitude && userLocation.longitude) {
-      fetchWeatherByCoords(userLocation.latitude, userLocation.longitude);
-    } else {
-      fetchWeatherByCity("Seoul");
+  // 위치 정보 초기화 및 날씨 가져오기
+  async function initializeWeather() {
+    try {
+      userLocation = { ...userLocation, loading: true };
+      
+      // 사용자 위치 가져오기
+      const locationData = await getUserLocation();
+      userLocation = locationData;
+      
+      // 위치 정보가 있으면 좌표로 날씨 가져오기, 없으면 도시명으로 가져오기
+      await updateWeather();
+      
+    } catch (error) {
+      console.error("날씨 초기화 중 오류 발생:", error);
+      userLocation.loading = false;
     }
   }
   
@@ -83,85 +138,9 @@
     }, WEATHER_UPDATE_INTERVAL);
   }
   
-  // 좌표로 날씨 정보 가져오기
-  async function fetchWeatherByCoords(lat, lon) {
-    try {
-      // OpenWeatherMap API 키 가져오기
-      const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
-      
-      if (!apiKey || apiKey === "your_api_key_here") {
-        console.warn("OpenWeatherMap API 키가 설정되지 않았습니다.");
-        weather = { 
-          condition: "API 키 필요", 
-          temperature: "--°C", 
-          location: "설정 필요" 
-        };
-        return;
-      }
-      
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=kr`;
-      
-      const response = await axios.get(url);
-      const data = response.data;
-      
-      // 날씨 데이터 업데이트
-      weather = {
-        condition: data.weather[0].description,
-        temperature: `${Math.round(data.main.temp)}°C`,
-        location: data.name
-      };
-      
-    } catch (error) {
-      console.error("날씨 정보를 가져오는 중 오류 발생:", error);
-      weather = { 
-        condition: "오류 발생", 
-        temperature: "--°C", 
-        location: "재시도 중..." 
-      };
-    }
-  }
-  
-  // 도시명으로 날씨 정보 가져오기
-  async function fetchWeatherByCity(city) {
-    try {
-      // OpenWeatherMap API 키 가져오기
-      const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
-      
-      if (!apiKey || apiKey === "your_api_key_here") {
-        console.warn("OpenWeatherMap API 키가 설정되지 않았습니다.");
-        weather = { 
-          condition: "API 키 필요", 
-          temperature: "--°C", 
-          location: "설정 필요" 
-        };
-        return;
-      }
-      
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric&lang=kr`;
-      
-      const response = await axios.get(url);
-      const data = response.data;
-      
-      // 날씨 데이터 업데이트
-      weather = {
-        condition: data.weather[0].description,
-        temperature: `${Math.round(data.main.temp)}°C`,
-        location: data.name
-      };
-      
-    } catch (error) {
-      console.error("날씨 정보를 가져오는 중 오류 발생:", error);
-      weather = { 
-        condition: "오류 발생", 
-        temperature: "--°C", 
-        location: "재시도 중..." 
-      };
-    }
-  }
-  
   // 컴포넌트가 마운트될 때 위치 정보와 날씨 데이터 가져오기, 정기 업데이트 시작
   onMount(() => {
-    getUserLocation();
+    initializeWeather();
     startWeatherUpdates();
   });
   
@@ -171,13 +150,10 @@
       clearInterval(weatherUpdateTimer);
     }
   });
+  
+  // 현재 날씨에 따른 아이콘 컴포넌트
+  $: WeatherIcon = getWeatherIcon(weather.weatherId);
+  $: weatherColorClass = getWeatherColorClass(weather.weatherId);
 </script>
 
-<div class="flex items-center">
-  {#if userLocation.loading}
-    <span class="text-lg font-medium">위치 정보 가져오는 중...</span>
-  {:else}
-    <span class="text-lg font-medium">{weather.condition} {weather.temperature}</span>
-    <span class="text-sm text-muted-foreground ml-2">{weather.location}</span>
-  {/if}
-</div> 
+<WeatherDisplay {weather} isLoading={userLocation.loading} /> 
