@@ -1,25 +1,19 @@
-<script lang="ts">
-  import { cn } from "$lib/utils";
-  import { getContext } from "svelte";
-
-  export let orientation: "horizontal" | "vertical" = "horizontal";
-  export let decorative = false;
-  export let class_name = "";
-  export let class_value = "";
-
-  $: orientationClass = orientation === "horizontal" ? "h-px w-full" : "h-full w-px";
+<script>
+	import { Separator as SeparatorPrimitive } from "bits-ui";
+	import { cn } from "$lib/utils.js";
+	let className = undefined;
+	export let orientation = "horizontal";
+	export let decorative = undefined;
+	export { className as class };
 </script>
 
-<div
-  class={cn(
-    "shrink-0 bg-border",
-    orientationClass,
-    class_name,
-    class_value,
-    $$props.class
-  )}
-  role={decorative ? "none" : "separator"}
-  aria-orientation={orientation}
-  data-orientation={orientation}
-  data-testid="separator"
-/> 
+<SeparatorPrimitive.Root
+	class={cn(
+		"bg-border shrink-0",
+		orientation === "horizontal" ? "h-[1px] w-full" : "min-h-full w-[1px]",
+		className
+	)}
+	{orientation}
+	{decorative}
+	{...$$restProps}
+/>
