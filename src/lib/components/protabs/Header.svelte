@@ -4,9 +4,6 @@
   import SearchBox from "$lib/components/protabs/SearchBox.svelte";
   import ThemeToggle from "$lib/components/protabs/ThemeToggle.svelte";
   
-  // 날씨 데이터 (기본값)
-  let weather = { condition: "로딩 중...", temperature: "", location: "" };
-  
   // 검색 이벤트 핸들러
   function handleSearch(event) {
     console.log('검색:', event.detail);
@@ -16,7 +13,7 @@
 <header class="p-4 flex justify-between items-center border-b">
   <div class="flex items-center space-x-6">
     <!-- 날씨 정보 -->
-    <Weather bind:weather />
+    <Weather />
     
     <!-- 검색 -->
     <SearchBox on:search={handleSearch} />

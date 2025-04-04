@@ -38,6 +38,9 @@
   // 타이머 ID 저장 변수
   let weatherUpdateTimer;
   
+  // 간소화 모드 활성화 여부 (배경 모드에서 사용)
+  export let minimized = false;
+  
   // 날씨 ID에 따른 아이콘 매핑
   // OpenWeatherMap API 날씨 코드: https://openweathermap.org/weather-conditions
   const getWeatherIcon = (weatherId) => {
@@ -156,4 +159,4 @@
   $: weatherColorClass = getWeatherColorClass(weather.weatherId);
 </script>
 
-<WeatherDisplay {weather} isLoading={userLocation.loading} /> 
+<WeatherDisplay {weather} isLoading={userLocation.loading} {minimized} /> 
