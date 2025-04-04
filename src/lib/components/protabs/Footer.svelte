@@ -2,12 +2,13 @@
   import { Button } from "$lib/components/ui/button";
   import { Image, Maximize2 } from "lucide-svelte";
   import { toggleBackgroundMode } from "$lib/utils/backgroundMode";
+  import { toggleBackgroundSelector } from "$lib/utils/backgroundImage";
 </script>
 
 <footer class="p-4 flex justify-between items-center border-t">
   <div class="flex space-x-2">
     <!-- 배경 변경 버튼 -->
-    <Button variant="ghost" size="sm">
+    <Button variant="ghost" size="sm" on:click={toggleBackgroundSelector}>
       <Image class="h-5 w-5 mr-2" />
       배경 변경
     </Button>
