@@ -159,11 +159,11 @@
   <!-- 할 일 목록 -->
   <div class="overflow-y-auto flex-1 pr-1">
     {#if filteredTodos.length === 0}
-      <div class="text-center py-8 text-muted-foreground">
+      <div class="text-center py-8">
         {#if todos.length === 0}
-          할 일이 없습니다. 새로운 할 일을 추가해보세요!
+          <p class="text-readable-muted">할 일이 없습니다. 새로운 할 일을 추가해보세요!</p>
         {:else}
-          검색 조건에 맞는 할 일이 없습니다.
+          <p class="text-readable-muted">검색 조건에 맞는 할 일이 없습니다.</p>
         {/if}
       </div>
     {:else}
@@ -180,7 +180,7 @@
                 <div class="flex flex-col min-w-0">
                   <Label 
                     for={`todo-${todo.id}`}
-                    class={`cursor-pointer ${todo.completed ? "line-through text-muted-foreground" : ""} truncate`}
+                    class={`cursor-pointer ${todo.completed ? "line-through text-gray-500 dark:text-gray-400" : "font-medium"} truncate`}
                   >
                     {todo.text}
                   </Label>

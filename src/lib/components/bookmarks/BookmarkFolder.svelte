@@ -23,13 +23,13 @@
         tabindex="0"
       >
         <div class="flex items-center">
-          <FolderOpen class="h-4 w-4 mr-2 text-muted-foreground" />
-          <span>{folder.title}</span>
+          <FolderOpen class="h-4 w-4 mr-2 text-primary" />
+          <span class="font-medium">{folder.title}</span>
         </div>
         {#if folder.expanded}
-          <ChevronDown class="h-4 w-4 text-muted-foreground" />
+          <ChevronDown class="h-4 w-4 text-primary" />
         {:else}
-          <ChevronRight class="h-4 w-4 text-muted-foreground" />
+          <ChevronRight class="h-4 w-4 text-primary" />
         {/if}
       </div>
     </ContextMenu.Trigger>
@@ -55,7 +55,7 @@
   {#if folder.expanded}
     <ul class="ml-6 mt-1 space-y-1">
       {#if folder.bookmarks.length === 0}
-        <li class="p-2 text-sm text-muted-foreground">
+        <li class="p-2 text-sm text-readable-muted italic">
           북마크가 없습니다.
         </li>
       {:else}

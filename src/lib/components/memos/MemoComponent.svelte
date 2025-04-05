@@ -146,10 +146,10 @@
 <div class="h-full flex flex-col">
   {#if isLoading}
     <div class="flex justify-center items-center h-full">
-      <p class="text-muted-foreground">메모 로딩 중...</p>
+      <p class="text-readable-muted font-medium">메모 로딩 중...</p>
     </div>
   {:else if loadError}
-    <div class="flex flex-col justify-center items-center h-full text-destructive">
+    <div class="flex flex-col justify-center items-center h-full text-error">
       <p>{loadError}</p>
       <button 
         class="mt-2 px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm"
@@ -182,7 +182,7 @@
     <Sheet.Content side="right" class="w-full sm:w-3/4 max-w-4xl p-6">
       <Sheet.Header>
         <Sheet.Title>메모 편집</Sheet.Title>
-        <Sheet.Description>
+        <Sheet.Description class="text-readable-muted">
           메모는 자동으로 저장됩니다.
         </Sheet.Description>
       </Sheet.Header>

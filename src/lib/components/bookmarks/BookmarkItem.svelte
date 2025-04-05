@@ -1,6 +1,6 @@
 <script>
   import * as ContextMenu from "$lib/components/ui/context-menu";
-  import { ExternalLink, Edit, Trash2 } from "lucide-svelte";
+  import { ExternalLink, Edit, Trash2, Link } from "lucide-svelte";
   
   export let bookmark;
   export let folderId;
@@ -13,11 +13,12 @@
     <ContextMenu.Trigger>
       <a 
         href={bookmark.url} 
-        class="flex items-center p-2 hover:bg-muted/50 rounded-md text-sm" 
+        class="flex items-center p-2 hover:bg-muted/70 rounded-md text-sm group transition-colors duration-200" 
         target="_blank" 
         rel="noopener noreferrer"
       >
-        {bookmark.title}
+        <Link class="h-3.5 w-3.5 mr-1.5 text-primary opacity-70 group-hover:opacity-100" />
+        <span class="font-medium group-hover:text-primary">{bookmark.title}</span>
       </a>
     </ContextMenu.Trigger>
     <ContextMenu.Content>

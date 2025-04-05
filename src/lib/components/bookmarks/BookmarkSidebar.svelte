@@ -366,12 +366,12 @@
     <div class="flex-1 overflow-hidden px-4">
       <div class="overflow-y-auto bookmark-scrollbar h-full pr-1">
         {#if isLoading}
-          <div class="flex flex-col items-center justify-center h-full text-muted-foreground">
+          <div class="flex flex-col items-center justify-center h-full text-readable-muted font-medium">
             <p>북마크 로딩 중...</p>
           </div>
         {:else if loadError}
           <div class="flex flex-col items-center justify-center h-full text-sm">
-            <p class="text-destructive">오류: {loadError}</p>
+            <p class="text-error">오류: {loadError}</p>
             <button 
               class="mt-2 px-3 py-1 text-xs rounded-md bg-muted hover:bg-muted/80 transition-colors"
               on:click={refreshData}
@@ -380,11 +380,11 @@
             </button>
           </div>
         {:else if isSearchMode && searchResults.length === 0}
-          <div class="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
+          <div class="flex flex-col items-center justify-center h-full text-readable-muted text-sm">
             <p>검색 결과가 없습니다.</p>
           </div>
         {:else if bookmarks.length === 0}
-          <div class="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
+          <div class="flex flex-col items-center justify-center h-full text-readable-muted text-sm">
             <p>저장된 북마크가 없습니다.</p>
             <p>오른쪽 상단 버튼으로 북마크를 추가해보세요.</p>
           </div>

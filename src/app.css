@@ -8,7 +8,7 @@
     --foreground: 222.2 84% 4.9%;
  
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 215.4 16.3% 30%;
  
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -41,7 +41,7 @@
     --foreground: 210 40% 98%;
  
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 215 20.2% 85%;
  
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
@@ -97,5 +97,66 @@
     -webkit-box-shadow: none !important;
     -webkit-tap-highlight-color: transparent !important;
     -webkit-focus-ring-color: transparent !important;
+  }
+
+  /* 모든 텍스트에 대한 기본 가독성 향상 규칙 */
+  .text-muted-foreground {
+    @apply font-medium;
+  }
+
+  /* 다크모드에서 모든 muted-foreground 텍스트에 더 높은 대비 적용 */
+  .dark .text-muted-foreground {
+    @apply text-gray-200;
+  }
+}
+
+/* 가독성 향상을 위한 유틸리티 클래스 */
+@layer utilities {
+  /* 다크모드에서 회색 텍스트 가독성 향상 */
+  .dark .text-readable-muted {
+    @apply text-gray-200 font-medium;
+  }
+  
+  /* 라이트모드에서 회색 텍스트 가독성 향상 */
+  .text-readable-muted {
+    @apply text-gray-700 font-medium;
+  }
+  
+  /* 상태 메시지 등 작은 텍스트 가독성 향상 */
+  .dark .text-status {
+    @apply text-blue-200 font-medium;
+  }
+  
+  .text-status {
+    @apply text-blue-800 font-medium;
+  }
+  
+  /* 에러/경고 메시지 텍스트 가독성 향상 */
+  .dark .text-error {
+    @apply text-red-300 font-medium;
+  }
+  
+  .text-error {
+    @apply text-red-700 font-medium;
+  }
+  
+  /* 필수 라벨 강조 */
+  .required-label::after {
+    content: " *";
+    @apply text-red-500;
+  }
+
+  /* 팝업 정보 텍스트 (라벨, 도움말 등) */
+  .text-info {
+    @apply font-medium;
+  }
+
+  .dark .text-info {
+    @apply text-sky-200;
+  }
+
+  /* 탭 레이블, 필터링 등 선택 요소에 대한 높은 가독성 */
+  .text-selection-label {
+    @apply font-semibold;
   }
 }

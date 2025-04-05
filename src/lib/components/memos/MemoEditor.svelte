@@ -142,7 +142,7 @@
       id="memo-title-input"
       type="text"
       placeholder="제목 없음"
-      class="text-lg font-medium border-none shadow-none focus-visible:ring-0 h-auto px-0 py-1"
+      class="text-lg font-medium border-none shadow-none focus-visible:ring-0 h-auto px-0 py-1 text-foreground placeholder:text-muted-foreground"
       disabled={readOnly}
       bind:value={title}
       on:input={handleTitleChange}
@@ -196,7 +196,7 @@
   <!-- 에디터 내용 -->
   <div class="flex-1 overflow-hidden">
     <textarea
-      class="w-full h-full p-2 resize-none border-none bg-transparent focus:outline-none"
+      class="w-full h-full p-2 resize-none border-none bg-transparent focus:outline-none text-foreground"
       placeholder="내용을 입력하세요..."
       disabled={readOnly}
       bind:value={content}
