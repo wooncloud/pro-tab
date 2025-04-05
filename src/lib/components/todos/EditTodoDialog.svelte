@@ -15,6 +15,7 @@
   // 편집 상태
   let editText = "";
   let editPriority = "medium";
+  let isComposing = false; // IME 조합 상태 추적
   
   // todo가 변경될 때 편집 상태 초기화
   $: if (todo) {
@@ -46,8 +47,23 @@
     }
   }
   
+  // IME 조합 시작 핸들러
+  function handleCompositionStart() {
+    isComposing = true;
+  }
+  
+  // IME 조합 종료 핸들러
+  function handleCompositionEnd() {
+    isComposing = false;
+  }
+  
   // 엔터키 처리
   function handleKeydown(event) {
+    // IME 조합 중이면 처리하지 않음
+    if (event.isComposing || isComposing) {
+      return;
+    }
+    
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       if (editText.trim()) {
@@ -84,6 +100,8 @@
               bind:this={textInputElement}
               placeholder="할 일 내용"
               on:keydown={handleKeydown}
+              on:compositionstart={handleCompositionStart}
+              on:compositionend={handleCompositionEnd}
               autocomplete="off"
             />
           </div>

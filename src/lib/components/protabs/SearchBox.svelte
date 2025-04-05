@@ -61,7 +61,7 @@
   <div class="relative mr-2">
     <!-- 현재 선택된 검색 엔진 로고 -->
     <button 
-      class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 focus:outline-none"
+      class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
       on:click={() => showEngineSelector = !showEngineSelector}
       aria-label="검색 엔진 선택"
     >
@@ -97,10 +97,10 @@
     
     <!-- 검색 엔진 선택 드롭다운 -->
     {#if showEngineSelector}
-      <div class="absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md border z-10">
+      <div class="absolute top-full left-0 mt-1 bg-popover text-popover-foreground shadow-lg rounded-md border z-10">
         {#each searchEngines as engine}
           <button
-            class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2"
+            class="w-full px-4 py-2 text-left hover:bg-muted flex items-center space-x-2"
             on:click={() => changeEngine(engine.id)}
           >
             <span class={selectedEngine === engine.id ? "font-bold" : ""}>

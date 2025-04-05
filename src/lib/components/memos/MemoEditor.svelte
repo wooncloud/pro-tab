@@ -76,9 +76,12 @@
   function saveChanges() {
     if (!memo || !modified) return;
     
+    // 제목이 비어있으면 저장하지 않음
+    if (!title.trim()) return;
+    
     const updatedMemo = {
       ...memo,
-      title: title.trim() || "제목 없음",
+      title: title.trim(),
       content,
       updatedAt: new Date().toISOString()
     };

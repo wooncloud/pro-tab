@@ -4,7 +4,8 @@
   import { Checkbox } from "$lib/components/ui/checkbox";
   import { Label } from "$lib/components/ui/label";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import { MoreHorizontal, Pencil, Trash2 } from "lucide-svelte";
+  import { MoreHorizontal, Pencil, Trash2, Plus, Save, Flag, Filter, CheckCircle2, CircleDashed, Circle } from "lucide-svelte";
+  import { PRIORITIES } from "./TodoStorage";
   
   // Props
   export let todos = [];
@@ -16,8 +17,11 @@
   
   // 상태
   let newTodoText = "";
-  let priorityFilter = "all";
-  let searchQuery = "";
+  let isComposing = false; // IME 조합 상태 추적
+  let newTodoPriority = "medium"; // 새 할 일의 우선순위 기본값
+  let isPriorityDropdownOpen = false;
+  let isStatusFilterOpen = false;
+  let statusFilter = "all"; // 'all', 'active', 'completed'
   
   // 우선순위 매핑
   const priorityLabels = {
@@ -33,20 +37,27 @@
     high: "bg-red-100 text-red-800"
   };
   
-  // 필터된 할 일 항목 계산
-  $: filteredTodos = todos
+  // 우선순위 아이콘 색상
+  const priorityIconColors = {
+    low: "text-blue-500",
+    medium: "text-amber-500",
+    high: "text-red-500"
+  };
+  
+  // 상태 필터 아이콘과 레이블
+  const statusFilters = [
+    { value: "all", label: "전체", icon: CircleDashed },
+    { value: "active", label: "미완료", icon: Circle },
+    { value: "completed", label: "완료", icon: CheckCircle2 }
+  ];
+  
+  // 필터와 정렬이 적용된 할 일 목록 계산
+  $: filteredAndSortedTodos = todos
     .filter(todo => {
-      // 우선순위 필터링
-      if (priorityFilter !== 'all' && todo.priority !== priorityFilter) {
-        return false;
-      }
-      
-      // 검색어 필터링
-      if (searchQuery && !todo.text.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-      
-      return true;
+      // 상태 필터링
+      if (statusFilter === "active") return !todo.completed;
+      if (statusFilter === "completed") return todo.completed;
+      return true; // all
     })
     .sort((a, b) => {
       // 우선순위 순으로 정렬 (높음 > 중간 > 낮음)
@@ -62,19 +73,49 @@
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
   
+  // 현재 필터에 맞는 아이콘 가져오기
+  $: currentStatusFilterIcon = statusFilters.find(f => f.value === statusFilter)?.icon || CircleDashed;
+  
   // 할 일 추가 핸들러
   function handleAddTodo() {
     if (newTodoText.trim()) {
-      onAdd(newTodoText.trim(), "medium");
+      onAdd(newTodoText.trim(), newTodoPriority);
       newTodoText = "";
     }
   }
   
   // 엔터 키 핸들러
   function handleKeyDown(event) {
+    // isComposing이 true면 한글 등의 IME 입력 중이므로 처리하지 않음
+    if (event.isComposing || isComposing) {
+      return;
+    }
+    
     if (event.key === "Enter") {
       handleAddTodo();
     }
+  }
+  
+  // IME 조합 시작 핸들러
+  function handleCompositionStart() {
+    isComposing = true;
+  }
+  
+  // IME 조합 종료 핸들러
+  function handleCompositionEnd() {
+    isComposing = false;
+  }
+  
+  // 우선순위 선택 핸들러
+  function selectPriority(priority) {
+    newTodoPriority = priority;
+    isPriorityDropdownOpen = false;
+  }
+  
+  // 상태 필터 선택 핸들러
+  function selectStatusFilter(filter) {
+    statusFilter = filter;
+    isStatusFilterOpen = false;
   }
   
   // 완료된 할 일 수 계산
@@ -88,45 +129,88 @@
   <!-- 할 일 추가 폼 -->
   <div class="mb-4">
     <div class="flex space-x-2 mb-2">
+      <!-- 우선순위 선택 드롭다운 -->
+      <DropdownMenu.Root bind:open={isPriorityDropdownOpen}>
+        <DropdownMenu.Trigger asChild let:builder>
+          <Button
+            variant="outline"
+            size="icon"
+            builders={[builder]}
+            title="우선순위 선택"
+            aria-label="우선순위 선택"
+            class={priorityIconColors[newTodoPriority]}
+          >
+            <Flag class="h-4 w-4" />
+          </Button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          {#each PRIORITIES as priority}
+            <DropdownMenu.Item 
+              on:click={() => selectPriority(priority.value)}
+              class={`cursor-pointer ${priority.value === newTodoPriority ? 'bg-muted' : ''}`}
+            >
+              <span class={priority.color + " mr-2"}>
+                <Flag class="h-4 w-4" />
+              </span>
+              <span>{priority.label}</span>
+            </DropdownMenu.Item>
+          {/each}
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+      
       <Input 
         type="text" 
         placeholder="할 일 추가..." 
         bind:value={newTodoText}
         on:keydown={handleKeyDown}
+        on:compositionstart={handleCompositionStart}
+        on:compositionend={handleCompositionEnd}
         class="flex-1"
       />
+      
       <Button 
         on:click={handleAddTodo} 
-        size="sm" 
+        size="icon" 
         disabled={!newTodoText.trim()}
+        title="할 일 추가"
+        aria-label="할 일 추가"
       >
-        추가
+        <Save class="h-4 w-4" />
       </Button>
-    </div>
-    
-    <!-- 검색 및 필터링 -->
-    <div class="flex space-x-2 mb-2">
-      <Input 
-        type="text" 
-        placeholder="검색..." 
-        bind:value={searchQuery}
-        class="flex-1"
-      />
-      <select 
-        bind:value={priorityFilter}
-        class="px-2 rounded-md border border-input bg-background"
-      >
-        <option value="all">모든 우선순위</option>
-        <option value="high">높음</option>
-        <option value="medium">중간</option>
-        <option value="low">낮음</option>
-      </select>
     </div>
     
     <!-- 진행 상황 바 -->
     <div class="relative pt-1 mb-2">
       <div class="flex items-center justify-between">
-        <div>
+        <div class="flex items-center space-x-2">
+          <!-- 상태 필터 드롭다운 -->
+          <DropdownMenu.Root bind:open={isStatusFilterOpen}>
+            <DropdownMenu.Trigger asChild let:builder>
+              <Button
+                variant="outline"
+                size="sm"
+                builders={[builder]}
+                title="완료 상태 필터"
+                aria-label="완료 상태 필터"
+                class="h-6 px-2 text-xs"
+              >
+                <svelte:component this={currentStatusFilterIcon} class="h-3 w-3 mr-1" />
+                <span class="sr-only sm:not-sr-only sm:inline">{statusFilters.find(f => f.value === statusFilter)?.label}</span>
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content align="start">
+              {#each statusFilters as filter}
+                <DropdownMenu.Item 
+                  on:click={() => selectStatusFilter(filter.value)}
+                  class={`cursor-pointer ${filter.value === statusFilter ? 'bg-muted' : ''}`}
+                >
+                  <svelte:component this={filter.icon} class="mr-2 h-4 w-4" />
+                  <span>{filter.label}</span>
+                </DropdownMenu.Item>
+              {/each}
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+          
           <span class="text-xs font-semibold inline-block text-primary">
             진행률: {completionPercentage}%
           </span>
@@ -147,7 +231,7 @@
           {/if}
         </div>
       </div>
-      <div class="overflow-hidden h-2 text-xs flex rounded bg-primary/20">
+      <div class="overflow-hidden h-2 mt-2 text-xs flex rounded bg-primary/20">
         <div 
           style="width:{completionPercentage}%" 
           class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-300"
@@ -158,17 +242,25 @@
   
   <!-- 할 일 목록 -->
   <div class="overflow-y-auto flex-1 pr-1">
-    {#if filteredTodos.length === 0}
+    {#if filteredAndSortedTodos.length === 0}
       <div class="text-center py-8">
         {#if todos.length === 0}
           <p class="text-readable-muted">할 일이 없습니다. 새로운 할 일을 추가해보세요!</p>
         {:else}
-          <p class="text-readable-muted">검색 조건에 맞는 할 일이 없습니다.</p>
+          <p class="text-readable-muted">
+            {#if statusFilter === "active"}
+              미완료된 할 일이 없습니다.
+            {:else if statusFilter === "completed"}
+              완료된 할 일이 없습니다.
+            {:else}
+              필터 조건에 맞는 할 일이 없습니다.
+            {/if}
+          </p>
         {/if}
       </div>
     {:else}
       <ul class="space-y-2">
-        {#each filteredTodos as todo (todo.id)}
+        {#each filteredAndSortedTodos as todo (todo.id)}
           <li class={`rounded-md border ${todo.completed ? 'bg-muted/30' : 'hover:bg-muted/30'}`}>
             <div class="flex items-center justify-between p-3">
               <div class="flex items-center space-x-3 flex-1 min-w-0">
