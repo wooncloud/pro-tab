@@ -36,8 +36,8 @@
   class="h-screen flex flex-col bg-background text-foreground relative"
   style={backgroundImageUrl ? `background-image: url('${backgroundImageUrl}'); background-size: cover; background-position: center;` : ''}
 >
-  {#if backgroundImageUrl}
-    <!-- 배경 이미지가 있을 때 오버레이 추가 -->
+  {#if backgroundImageUrl && !$isBackgroundMode}
+    <!-- 일반 모드에서만 배경 이미지에 오버레이 추가 -->
     <div class="absolute inset-0 bg-background/50 backdrop-blur-[2px] dark:bg-background/70"></div>
   {/if}
   

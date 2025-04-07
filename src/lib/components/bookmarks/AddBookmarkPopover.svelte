@@ -15,6 +15,15 @@
   let bookmarkNameInput;
   let bookmarkUrlInput;
   let isOpen = false;
+  let isFormValid = false;
+  
+  // 폼 유효성 검사 함수
+  function updateFormValidity() {
+    const nameValid = newBookmarkName.trim().length > 0;
+    const urlValid = newBookmarkUrl.trim().length > 0 && !urlError;
+    isFormValid = nameValid && urlValid;
+    console.log('북마크 폼 유효성:', { nameValid, urlValid, isFormValid });
+  }
   
   // URL 입력란 변경 시 유효성 실시간 검사
   function handleUrlInput() {
@@ -27,19 +36,32 @@
     } else {
       urlError = "";
     }
+    updateFormValidity();
+  }
+  
+  // 이름 입력란 변경 시 유효성 검사
+  function handleNameInput() {
+    updateFormValidity();
+  }
+  
+  // 반응형 유효성 검사 - 값이 변경될 때마다 유효성 검사
+  $: {
+    if (newBookmarkName !== undefined || newBookmarkUrl !== undefined) {
+      updateFormValidity();
+    }
   }
   
   // 북마크 추가 함수
   function addBookmark() {
-    if (newBookmarkName.trim() && newBookmarkUrl.trim() && !urlError) {
-      onAddBookmark(selectedFolderId, newBookmarkName, newBookmarkUrl);
-      
-      // 입력 필드 초기화
-      newBookmarkName = "";
-      newBookmarkUrl = "";
-      urlError = "";
-      isOpen = false;
-    }
+    if (!isFormValid) return;
+    
+    onAddBookmark(selectedFolderId, newBookmarkName, newBookmarkUrl);
+    
+    // 입력 필드 초기화
+    newBookmarkName = "";
+    newBookmarkUrl = "";
+    urlError = "";
+    isOpen = false;
   }
   
   // URL 입력란으로 포커스 이동
@@ -55,6 +77,22 @@
       bookmarkNameInput.focus();
     }, 50);
   }
+  
+  // 폼 제출 핸들러
+  function handleSubmit(event) {
+    event.preventDefault();
+    if (isFormValid) {
+      addBookmark();
+    }
+  }
+  
+  // 엔터 키 처리
+  function handleKeyDown(event) {
+    if (event.key === 'Enter' && isFormValid) {
+      event.preventDefault();
+      addBookmark();
+    }
+  }
 </script>
 
 <Popover.Root bind:open={isOpen}>
@@ -64,7 +102,7 @@
     </Button>
   </Popover.Trigger>
   <Popover.Content class="w-72 p-4">
-    <form on:submit|preventDefault={addBookmark}>
+    <form on:submit={handleSubmit}>
       <div class="grid gap-4">
         <h4 class="font-medium">북마크 추가</h4>
         
@@ -88,6 +126,8 @@
               bind:value={newBookmarkName}
               bind:this={bookmarkNameInput}
               on:blur={focusUrlInput}
+              on:input={handleNameInput}
+              on:keydown={handleKeyDown}
               autocomplete="off"
             />
           </div>
@@ -100,6 +140,7 @@
                 bind:value={newBookmarkUrl}
                 bind:this={bookmarkUrlInput}
                 on:input={handleUrlInput}
+                on:keydown={handleKeyDown}
                 autocomplete="off"
                 class={urlError ? "border-destructive" : ""}
               />
@@ -116,11 +157,21 @@
           
           <Button 
             type="submit"
-            disabled={!newBookmarkName || !newBookmarkUrl || urlError}
+            disabled={!isFormValid}
             class="w-full"
           >
             추가
           </Button>
+          
+          <!-- 디버그 정보 (개발 환경에서만 표시) -->
+          {#if process.env.NODE_ENV === 'development'}
+            <div class="text-xs text-muted-foreground bg-muted/30 p-2 rounded mt-2">
+              <div>이름: {newBookmarkName || '(없음)'}</div>
+              <div>URL: {newBookmarkUrl || '(없음)'}</div>
+              <div>URL 오류: {urlError || '없음'}</div>
+              <div>폼 유효성: {isFormValid ? '✓' : '✗'}</div>
+            </div>
+          {/if}
         </div>
       </div>
     </form>

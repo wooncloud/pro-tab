@@ -41,8 +41,8 @@
 <section class="flex-1 flex flex-col justify-center items-center p-6">
   {#if enlarged}
     <!-- 배경 모드에서 사용되는 확대된 시계 -->
-    <h1 class="text-9xl font-bold mb-4">{formatTime(time)}</h1>
-    <p class="text-2xl text-muted-foreground">{formatDate(time)}</p>
+    <h1 class="text-9xl font-bold mb-4 text-white drop-shadow-2xl" style="text-shadow: 0 0 20px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 0, 0, 0.5);">{formatTime(time)}</h1>
+    <p class="text-2xl text-white drop-shadow-lg" style="text-shadow: 0 0 15px rgba(0, 0, 0, 0.7);">{formatDate(time)}</p>
   {:else}
     <!-- 기본 시계 -->
     <h1 class="text-7xl font-bold mb-4">{formatTime(time)}</h1>
