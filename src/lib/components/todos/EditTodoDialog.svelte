@@ -124,7 +124,7 @@
         
         <div class="mt-6 flex justify-end space-x-2">
           <Dialog.Close asChild>
-            <Button type="button" variant="outline" on:click={onClose}>취소</Button>
+            <Button type="button" variant="outline" class="text-foreground border-input hover:bg-accent hover:text-accent-foreground" on:click={onClose}>취소</Button>
           </Dialog.Close>
           <Button 
             type="submit"

@@ -211,29 +211,64 @@
   }
 
   // 편집 저장
-  function saveEdit() {
+  function saveEdit(newFolderId) {
     if (editingBookmark) {
       // 북마크 편집 저장
       if (editBookmarkName.trim() && editBookmarkUrl.trim() && isValidUrl(editBookmarkUrl)) {
         const formattedUrl = formatUrl(editBookmarkUrl);
-        bookmarks = bookmarks.map(folder => {
-          if (folder.id === editingFolder) {
-            return {
-              ...folder,
-              bookmarks: folder.bookmarks.map(bookmark => {
-                if (bookmark.id === editingBookmark.id) {
-                  return {
-                    ...bookmark,
-                    title: editBookmarkName,
-                    url: formattedUrl
-                  };
-                }
-                return bookmark;
-              })
-            };
-          }
-          return folder;
-        });
+        
+        // 폴더 변경이 없는 경우
+        if (!newFolderId || newFolderId === editingFolder) {
+          bookmarks = bookmarks.map(folder => {
+            if (folder.id === editingFolder) {
+              return {
+                ...folder,
+                bookmarks: folder.bookmarks.map(bookmark => {
+                  if (bookmark.id === editingBookmark.id) {
+                    return {
+                      ...bookmark,
+                      title: editBookmarkName,
+                      url: formattedUrl
+                    };
+                  }
+                  return bookmark;
+                })
+              };
+            }
+            return folder;
+          });
+        } else {
+          // 폴더 변경이 있는 경우 - 기존 폴더에서 제거하고 새 폴더에 추가
+          const updatedBookmark = {
+            ...editingBookmark,
+            title: editBookmarkName,
+            url: formattedUrl
+          };
+          
+          // 1. 먼저 기존 폴더에서 북마크 제거
+          bookmarks = bookmarks.map(folder => {
+            if (folder.id === editingFolder) {
+              return {
+                ...folder,
+                bookmarks: folder.bookmarks.filter(b => b.id !== editingBookmark.id)
+              };
+            }
+            return folder;
+          });
+          
+          // 2. 새 폴더에 북마크 추가
+          bookmarks = bookmarks.map(folder => {
+            if (folder.id === newFolderId) {
+              return {
+                ...folder,
+                expanded: true, // 새 폴더는 자동으로 확장
+                bookmarks: [...folder.bookmarks, updatedBookmark]
+              };
+            }
+            return folder;
+          });
+        }
+        
         saveBookmarksAndUpdateStore(bookmarks);
       }
     } else if (editingFolder) {

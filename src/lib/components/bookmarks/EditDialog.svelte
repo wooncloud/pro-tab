@@ -2,7 +2,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import * as Dialog from "$lib/components/ui/dialog";
-  import { isValidUrl } from "./BookmarkStorage";
+  import { isValidUrl, loadBookmarks } from "./BookmarkStorage";
   import { UNCATEGORIZED_FOLDER_NAME } from "./BookmarkStorage";
   import { onMount } from 'svelte';
   
@@ -15,10 +15,39 @@
   export let onSave;
   export let onClose;
 
+  // 폴더 변경을 위한 추가 변수
+  let bookmarkFolders = [];
+  let selectedFolderId = null;
+
+  // 컴포넌트 마운트 시 또는 다이얼로그가 열릴 때 폴더 목록 로드
+  $: if (isOpen && editingBookmark) {
+    loadBookmarkFolders();
+  }
+
+  // 폴더 목록 로드
+  async function loadBookmarkFolders() {
+    try {
+      bookmarkFolders = await loadBookmarks();
+      
+      // 현재 폴더 ID 설정
+      if (editingFolder) {
+        selectedFolderId = editingFolder;
+      }
+    } catch (error) {
+      console.error("폴더 목록 로드 중 오류:", error);
+    }
+  }
+
   // 폼 제출 핸들러
   function handleSubmit() {
     if (isSubmitDisabled()) return;
-    onSave();
+    
+    // 북마크의 경우 선택된 폴더 ID 정보도 전달
+    if (editingBookmark) {
+      onSave(selectedFolderId);
+    } else {
+      onSave();
+    }
   }
 
   // 저장 버튼 비활성화 체크
@@ -53,14 +82,14 @@
         bind:this={formElement}
         on:submit|preventDefault={handleSubmit}
       >
-        <Dialog.Title class="text-lg font-semibold">
+        <Dialog.Title class="text-lg font-semibold text-foreground">
           {#if editingBookmark}
             북마크 편집
           {:else if editingFolder}
             {editingFolder.title === UNCATEGORIZED_FOLDER_NAME ? '폴더 속성' : '폴더 편집'}
           {/if}
         </Dialog.Title>
-        <Dialog.Description class="text-sm text-muted-foreground mb-4">
+        <Dialog.Description class="text-sm text-readable-muted mb-4">
           {#if editingBookmark}
             북마크의 정보를 수정합니다.
           {:else if editingFolder}
@@ -72,33 +101,48 @@
           {#if editingBookmark}
             <!-- 북마크 편집 폼 -->
             <div class="space-y-2">
-              <label for="edit-bookmark-name" class="text-sm font-medium">북마크 이름</label>
+              <label for="edit-bookmark-name" class="text-sm font-medium text-foreground">북마크 이름</label>
               <Input 
                 id="edit-bookmark-name"
                 bind:value={editBookmarkName}
                 bind:this={nameInputElement}
                 placeholder="북마크 이름"
                 autocomplete="off"
+                class="text-foreground"
               />
             </div>
             
             <div class="space-y-2">
-              <label for="edit-bookmark-url" class="text-sm font-medium">URL</label>
+              <label for="edit-bookmark-url" class="text-sm font-medium text-foreground">URL</label>
               <Input 
                 id="edit-bookmark-url"
                 bind:value={editBookmarkUrl}
                 placeholder="URL (https://...)"
-                class={!isValidUrl(editBookmarkUrl) && editBookmarkUrl.trim() ? "border-destructive" : ""}
+                class={!isValidUrl(editBookmarkUrl) && editBookmarkUrl.trim() ? "border-destructive text-foreground" : "text-foreground"}
                 autocomplete="off"
               />
               {#if !isValidUrl(editBookmarkUrl) && editBookmarkUrl.trim()}
                 <p class="text-xs text-destructive">유효하지 않은 URL 형식입니다.</p>
               {/if}
             </div>
+            
+            <!-- 폴더 선택 드롭다운 추가 -->
+            <div class="space-y-2">
+              <label for="edit-bookmark-folder" class="text-sm font-medium text-foreground">폴더</label>
+              <select
+                id="edit-bookmark-folder"
+                bind:value={selectedFolderId}
+                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
+              >
+                {#each bookmarkFolders as folder}
+                  <option value={folder.id}>{folder.title}</option>
+                {/each}
+              </select>
+            </div>
           {:else if editingFolder}
             <!-- 폴더 편집 폼 -->
             <div class="space-y-2">
-              <label for="edit-folder-name" class="text-sm font-medium">폴더 이름</label>
+              <label for="edit-folder-name" class="text-sm font-medium text-foreground">폴더 이름</label>
               <Input 
                 id="edit-folder-name"
                 bind:value={editFolderName}
@@ -106,9 +150,10 @@
                 placeholder="폴더 이름"
                 disabled={editingFolder.title === UNCATEGORIZED_FOLDER_NAME}
                 autocomplete="off"
+                class="text-foreground"
               />
               {#if editingFolder.title === UNCATEGORIZED_FOLDER_NAME}
-                <p class="text-xs text-muted-foreground">미분류 폴더의 이름은 변경할 수 없습니다.</p>
+                <p class="text-xs text-readable-muted">미분류 폴더의 이름은 변경할 수 없습니다.</p>
               {/if}
             </div>
           {/if}
@@ -116,7 +161,7 @@
         
         <div class="mt-6 flex justify-end space-x-2">
           <Dialog.Close asChild>
-            <Button type="button" variant="outline" on:click={onClose}>취소</Button>
+            <Button type="button" variant="outline" class="text-foreground border-input hover:bg-accent hover:text-accent-foreground" on:click={onClose}>취소</Button>
           </Dialog.Close>
           <Button 
             type="submit"

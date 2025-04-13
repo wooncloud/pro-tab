@@ -182,9 +182,6 @@
     <Sheet.Content side="right" class="w-full sm:w-3/4 max-w-4xl p-6">
       <Sheet.Header>
         <Sheet.Title>메모 편집</Sheet.Title>
-        <Sheet.Description class="text-readable-muted">
-          메모는 자동으로 저장됩니다.
-        </Sheet.Description>
       </Sheet.Header>
       
       <div class="h-[calc(100vh-200px)] mt-6">
