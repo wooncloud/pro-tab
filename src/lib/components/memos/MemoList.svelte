@@ -154,7 +154,7 @@
             >
               <div class="flex flex-col">
                 <div class="flex justify-between items-start">
-                  <h3 class="font-medium truncate">
+                  <h3 class="font-bold truncate">
                     {memo.title || "제목 없음"}
                   </h3>
                   <div class="text-xs text-muted-foreground flex items-center ml-2">
@@ -162,7 +162,7 @@
                     <span>{formatDate(memo.updatedAt)}</span>
                   </div>
                 </div>
-                <p class="text-sm text-muted-foreground truncate">
+                <p class="text-sm text-muted-foreground truncate opacity-75">
                   {summarizeContent(memo.content)}
                 </p>
               </div>

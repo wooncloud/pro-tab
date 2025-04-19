@@ -180,18 +180,13 @@
   <!-- 전체 화면 편집을 위한 Sheet -->
   <Sheet.Root bind:open={isSheetOpen} onOpenChange={handleSheetClose}>
     <Sheet.Content side="right" class="w-full sm:w-3/4 max-w-4xl p-6">
-      <Sheet.Header>
-        <Sheet.Title>메모 편집</Sheet.Title>
-      </Sheet.Header>
-      
-      <div class="h-[calc(100vh-200px)] mt-6">
+      <div class="h-[calc(100vh-70px)] mt-6">
         {#if sheetMemo}
           <MemoEditor 
             memo={sheetMemo}
             fullScreenMode={true}
             on:save={handleSheetSave}
             on:delete={handleDeleteMemo}
-            on:close={() => isSheetOpen = false}
           />
         {/if}
       </div>

@@ -18,23 +18,26 @@
   <ContextMenu.Root>
     <ContextMenu.Trigger>
       <div class="flex items-center justify-between p-2">
-        <div class="flex items-center space-x-2 flex-1">
+        <div class="flex items-start space-x-2 flex-1">
           <Checkbox 
             id={`todo-${todo.id}`} 
             checked={todo.completed}
             onCheckedChange={() => onToggle(todo)}
+            class="mt-0.5"
           />
-          <Label 
-            for={`todo-${todo.id}`}
-            class={todo.completed ? "line-through text-muted-foreground cursor-pointer" : "cursor-pointer"}
-          >
-            {todo.text}
-          </Label>
-          
-          <!-- 우선순위 뱃지 -->
-          <span class={`text-xs px-2 py-0.5 rounded-full ${priorityColor}`}>
-            {todo.priority === 'high' ? '높음' : todo.priority === 'medium' ? '중간' : '낮음'}
-          </span>
+          <div class="flex flex-col">
+            <Label 
+              for={`todo-${todo.id}`}
+              class={todo.completed ? "line-through text-muted-foreground cursor-pointer" : "cursor-pointer text-foreground"}
+            >
+              {todo.text}
+            </Label>
+            
+            <!-- 우선순위 뱃지 -->
+            <span class={`text-xs px-2 py-0.5 rounded-full w-fit mt-1 ${priorityColor}`}>
+              {todo.priority === 'high' ? '높음' : todo.priority === 'medium' ? '중간' : '낮음'}
+            </span>
+          </div>
         </div>
         
         <!-- 작업 버튼 (모바일에서 항상 표시) -->

@@ -5,7 +5,7 @@
   import { Label } from "$lib/components/ui/label";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { MoreHorizontal, Pencil, Trash2, Plus, Save, Flag, Filter, CheckCircle2, CircleDashed, Circle } from "lucide-svelte";
-  import { PRIORITIES } from "./TodoStorage";
+  import { PRIORITIES, getPriorityColor } from "./TodoStorage";
   
   // Props
   export let todos = [];
@@ -28,13 +28,6 @@
     low: "낮음",
     medium: "중간",
     high: "높음"
-  };
-  
-  // 우선순위 색상 클래스
-  const priorityColors = {
-    low: "bg-blue-100 text-blue-800",
-    medium: "bg-yellow-100 text-yellow-800",
-    high: "bg-red-100 text-red-800"
   };
   
   // 우선순위 아이콘 색상
@@ -272,13 +265,13 @@
                 <div class="flex flex-col min-w-0">
                   <Label 
                     for={`todo-${todo.id}`}
-                    class={`cursor-pointer ${todo.completed ? "line-through text-gray-500 dark:text-gray-400" : "font-medium"} truncate`}
+                    class={`cursor-pointer ${todo.completed ? "line-through text-gray-500 dark:text-gray-400" : "font-medium text-foreground"} break-words`}
                   >
                     {todo.text}
                   </Label>
                   
                   {#if todo.priority}
-                    <span class={`text-xs px-2 py-0.5 rounded-full w-fit mt-1 ${priorityColors[todo.priority] || ''}`}>
+                    <span class={`text-xs px-2 py-0.5 rounded-full w-fit mt-1 ${getPriorityColor(todo.priority)}`}>
                       {priorityLabels[todo.priority] || todo.priority}
                     </span>
                   {/if}

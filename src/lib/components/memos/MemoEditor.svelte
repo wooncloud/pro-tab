@@ -182,17 +182,6 @@
           <Trash2 class="h-4 w-4 text-destructive" />
         </button>
       {/if}
-      
-      <!-- 닫기 버튼 -->
-      <button
-        type="button"
-        class="p-1 rounded-md hover:bg-muted transition-colors"
-        on:click={requestClose}
-        title="닫기"
-        aria-label="닫기"
-      >
-        <X class="h-4 w-4" />
-      </button>
     </div>
   </div>
   

@@ -83,7 +83,7 @@
         bind:this={formElement}
         on:submit|preventDefault={handleSubmit}
       >
-        <Dialog.Title class="text-lg font-semibold">
+        <Dialog.Title class="text-lg font-semibold text-foreground">
           할 일 편집
         </Dialog.Title>
         <Dialog.Description class="text-sm text-muted-foreground mb-4">
@@ -93,7 +93,7 @@
         <div class="space-y-4">
           <!-- 할 일 텍스트 입력 -->
           <div class="space-y-2">
-            <Label for="edit-todo-text" class="text-sm font-medium">할 일</Label>
+            <Label for="edit-todo-text" class="text-sm font-medium text-foreground">할 일</Label>
             <Input 
               id="edit-todo-text"
               bind:value={editText}
@@ -103,17 +103,18 @@
               on:compositionstart={handleCompositionStart}
               on:compositionend={handleCompositionEnd}
               autocomplete="off"
+              class="text-foreground"
             />
           </div>
           
           <!-- 우선순위 선택 -->
           <div class="space-y-2">
-            <Label class="text-sm font-medium">우선순위</Label>
+            <Label class="text-sm font-medium text-foreground">우선순위</Label>
             <RadioGroup bind:value={editPriority}>
               {#each PRIORITIES as priority}
                 <div class="flex items-center space-x-2">
                   <RadioGroupItem value={priority.value} id={`priority-${priority.value}`} />
-                  <Label for={`priority-${priority.value}`} class={`px-2 py-0.5 rounded-full text-xs ${priority.color}`}>
+                  <Label for={`priority-${priority.value}`} class={`px-2 py-0.5 rounded-full text-xs ${priority.bgClass}`}>
                     {priority.label}
                   </Label>
                 </div>

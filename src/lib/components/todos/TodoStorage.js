@@ -103,15 +103,30 @@ export function filterTodos(todos, filter = 'all') {
  * 우선순위 정보
  */
 export const PRIORITIES = [
-  { value: "high", label: "높음", color: "text-red-500" },
-  { value: "medium", label: "중간", color: "text-amber-500" },
-  { value: "low", label: "낮음", color: "text-blue-500" }
+  { 
+    value: "high", 
+    label: "높음", 
+    color: "text-red-500",
+    bgClass: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" 
+  },
+  { 
+    value: "medium", 
+    label: "중간", 
+    color: "text-amber-500",
+    bgClass: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" 
+  },
+  { 
+    value: "low", 
+    label: "낮음", 
+    color: "text-blue-500",
+    bgClass: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" 
+  }
 ];
 
 // 우선순위에 따른 색상 클래스 가져오기
 export function getPriorityColor(priority) {
   const found = PRIORITIES.find(p => p.value === priority);
-  return found ? found.color : "bg-gray-100 text-gray-800";
+  return found ? found.bgClass : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
 }
 
 // 우선순위에 따른 정렬 함수
