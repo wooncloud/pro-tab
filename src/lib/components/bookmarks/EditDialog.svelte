@@ -2,9 +2,12 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import * as Dialog from "$lib/components/ui/dialog";
-  import { isValidUrl, loadBookmarks } from "./BookmarkStorage";
-  import { UNCATEGORIZED_FOLDER_NAME } from "./BookmarkStorage";
+  import { isValidUrl, formatUrl, getFaviconUrl } from "./storage/BookmarkUtils";
+  import { loadBookmarks } from "./storage/BookmarkPersistence";
+  import { sortByOrder } from "./storage/BookmarkDnD";
+  import { UNCATEGORIZED_FOLDER_NAME } from "./storage/BookmarkModel";
   import { onMount } from 'svelte';
+  import { Link } from "lucide-svelte";
   
   export let isOpen = false;
   export let editingFolder = null;
@@ -18,10 +21,32 @@
   // 폴더 변경을 위한 추가 변수
   let bookmarkFolders = [];
   let selectedFolderId = null;
+  let faviconUrl = "";
+  let faviconError = false;
+  
+  // 편집 URL이 변경될 때마다 파비콘 URL 업데이트
+  $: if (editBookmarkUrl && isValidUrl(editBookmarkUrl)) {
+    faviconUrl = getFaviconUrl(formatUrl(editBookmarkUrl));
+    faviconError = false;
+  }
+  
+  // 파비콘 로드 오류 처리
+  function handleFaviconError() {
+    faviconError = true;
+  }
+
+  // 정렬된 폴더 목록
+  $: sortedFolders = sortByOrder(bookmarkFolders);
 
   // 컴포넌트 마운트 시 또는 다이얼로그가 열릴 때 폴더 목록 로드
   $: if (isOpen && editingBookmark) {
     loadBookmarkFolders();
+    // 북마크의 파비콘 URL 설정
+    if (editingBookmark.faviconUrl) {
+      faviconUrl = editingBookmark.faviconUrl;
+    } else if (editBookmarkUrl && isValidUrl(editBookmarkUrl)) {
+      faviconUrl = getFaviconUrl(formatUrl(editBookmarkUrl));
+    }
   }
 
   // 폴더 목록 로드
@@ -101,7 +126,19 @@
           {#if editingBookmark}
             <!-- 북마크 편집 폼 -->
             <div class="space-y-2">
-              <label for="edit-bookmark-name" class="text-sm font-medium text-foreground">북마크 이름</label>
+              <div class="flex items-center mb-2">
+                {#if faviconUrl && !faviconError}
+                  <img 
+                    src={faviconUrl} 
+                    alt="" 
+                    class="h-5 w-5 mr-2"
+                    on:error={handleFaviconError} 
+                  />
+                {:else}
+                  <Link class="h-5 w-5 text-primary mr-2" />
+                {/if}
+                <label for="edit-bookmark-name" class="text-sm font-medium text-foreground">북마크 이름</label>
+              </div>
               <Input 
                 id="edit-bookmark-name"
                 bind:value={editBookmarkName}
@@ -134,7 +171,7 @@
                 bind:value={selectedFolderId}
                 class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
               >
-                {#each bookmarkFolders as folder}
+                {#each sortedFolders as folder}
                   <option value={folder.id}>{folder.title}</option>
                 {/each}
               </select>

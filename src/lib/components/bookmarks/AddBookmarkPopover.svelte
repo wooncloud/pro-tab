@@ -3,7 +3,8 @@
   import { Input } from "$lib/components/ui/input";
   import * as Popover from "$lib/components/ui/popover";
   import { Bookmark, AlertCircle } from "lucide-svelte";
-  import { isValidUrl } from "./BookmarkStorage";
+  import { isValidUrl } from "./storage/BookmarkUtils";
+  import { sortByOrder } from "./storage/BookmarkDnD";
   
   export let bookmarks = [];
   export let onAddBookmark;
@@ -17,12 +18,14 @@
   let isOpen = false;
   let isFormValid = false;
   
+  // 정렬된 폴더 목록
+  $: sortedFolders = sortByOrder(bookmarks);
+  
   // 폼 유효성 검사 함수
   function updateFormValidity() {
     const nameValid = newBookmarkName.trim().length > 0;
     const urlValid = newBookmarkUrl.trim().length > 0 && !urlError;
     isFormValid = nameValid && urlValid;
-    console.log('북마크 폼 유효성:', { nameValid, urlValid, isFormValid });
   }
   
   // URL 입력란 변경 시 유효성 실시간 검사
@@ -110,10 +113,10 @@
           <div class="space-y-2">
             <select
               bind:value={selectedFolderId}
-              class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
             >
               <option value={null}>미분류에 추가</option>
-              {#each bookmarks as folder}
+              {#each sortedFolders as folder}
                 <option value={folder.id}>{folder.title}</option>
               {/each}
             </select>
@@ -129,6 +132,7 @@
               on:input={handleNameInput}
               on:keydown={handleKeyDown}
               autocomplete="off"
+              class="text-foreground"
             />
           </div>
           
@@ -142,7 +146,7 @@
                 on:input={handleUrlInput}
                 on:keydown={handleKeyDown}
                 autocomplete="off"
-                class={urlError ? "border-destructive" : ""}
+                class={`text-foreground ${urlError ? "border-destructive" : ""}`}
               />
               {#if urlError}
                 <div class="absolute right-2 top-2 text-destructive">

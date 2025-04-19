@@ -1,14 +1,31 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { loadBookmarks, saveBookmarks, formatUrl, isValidUrl, getOrCreateUncategorizedFolder, UNCATEGORIZED_FOLDER_NAME } from './BookmarkStorage';
-  import { checkAndSetMounted, setUnmounted, bookmarksStore } from './BookmarkSidebar.js';
+  import { 
+    formatUrl, isValidUrl, getFaviconUrl, generateUUID
+  } from './storage/BookmarkUtils';
+  import { getOrCreateUncategorizedFolder, UNCATEGORIZED_FOLDER_NAME } from './storage/BookmarkModel';
+  import { sortByOrder, handleDragDrop } from './storage/BookmarkDnD';
+  import { checkAndSetMounted, setUnmounted } from './BookmarkSidebar.js';
+  import { fetchBookmarks, persistBookmarks, bookmarksStore } from './hooks/useBookmarkStore.js';
   
   // 컴포넌트 임포트
   import BookmarkFolder from './BookmarkFolder.svelte';
-  import BookmarkSearch from './BookmarkSearch.svelte';
-  import AddBookmarkPopover from './AddBookmarkPopover.svelte';
-  import AddFolderPopover from './AddFolderPopover.svelte';
+  import BookmarkFolderList from './BookmarkFolderList.svelte';
   import EditDialog from './EditDialog.svelte';
+  import BookmarkSidebarHeader from './BookmarkSidebarHeader.svelte';
+  import BookmarkLoadingState from './BookmarkLoadingState.svelte';
+  import BookmarkErrorState from './BookmarkErrorState.svelte';
+  import BookmarkEmptyState from './BookmarkEmptyState.svelte';
+  
+  // 검색 관련 상태: 커스텀 훅 스토어로 대체
+  import { searchQuery, isSearchMode, searchResults, searchBookmarks as doSearchBookmarks, clearSearch as doClearSearch } from './hooks/useBookmarkSearch.js';
+  
+  // 드래그 앤 드롭 관련 상태: 커스텀 훅 스토어로 대체
+  import {
+    draggedItemId, draggedItemType, draggedSourceFolderId,
+    dragOverItemId, dragOverItemType, dragOverFolderId, dragOverPosition,
+    onDragStart as dndOnDragStart, onDragOver as dndOnDragOver, onDrop as dndOnDrop, onDragLeave as dndOnDragLeave, resetDragState
+  } from './hooks/useBookmarkDnD.js';
   
   // 싱글톤 체크 - 컴포넌트가 이미 있으면 비어있는 div 반환
   let shouldRender = true;
@@ -19,11 +36,6 @@
   let isLoading = true;
   let loadError = null;
   
-  // 검색 관련 상태
-  let searchQuery = "";
-  let isSearchMode = false;
-  let searchResults = [];
-  
   // 편집 관련 상태
   let isEditDialogOpen = false;
   let editingFolder = null;
@@ -31,6 +43,10 @@
   let editFolderName = "";
   let editBookmarkName = "";
   let editBookmarkUrl = "";
+  
+  // 정렬된 북마크 생성
+  $: sortedBookmarks = sortByOrder(bookmarks);
+  $: sortedSearchResults = $isSearchMode ? sortByOrder($searchResults) : [];
   
   // 컴포넌트 마운트 시 확인
   onMount(() => {
@@ -65,9 +81,9 @@
     try {
       isLoading = true;
       loadError = null;
-      bookmarks = await loadBookmarks();
-      // 북마크 데이터를 스토어에 저장
-      bookmarksStore.set(bookmarks);
+      
+      // 북마크 로드
+      bookmarks = await fetchBookmarks();
     } catch (error) {
       console.error("북마크 로드 중 오류:", error);
       loadError = error.message || "북마크 데이터를 불러오는 중 오류가 발생했습니다.";
@@ -79,6 +95,21 @@
   // 북마크 데이터 새로고침
   function refreshData() {
     loadData();
+  }
+  
+  // 상단 검색/추가 영역에서 사용할 이벤트 핸들러(임시)
+  function handleSearch(query) {
+    searchQuery.set(query);
+    doSearchBookmarks(bookmarks, query);
+  }
+  function handleClearSearch() {
+    doClearSearch();
+  }
+  function handleAddBookmark(folderId, name, url) {
+    addBookmark(folderId, name, url);
+  }
+  function handleAddFolder(folderName) {
+    addFolder(folderName);
   }
   
   // 폴더 토글 함수
@@ -99,13 +130,31 @@
     // 미분류 이름으로 폴더를 추가하려고 하는 경우 체크
     if (folderName.trim() === UNCATEGORIZED_FOLDER_NAME) {
       if (!bookmarks.some(folder => folder.title === UNCATEGORIZED_FOLDER_NAME)) {
-        const id = bookmarks.length ? Math.max(0, ...bookmarks.map(b => b.id)) + 1 : 1;
-        bookmarks = [...bookmarks, { id, title: UNCATEGORIZED_FOLDER_NAME, expanded: false, bookmarks: [] }];
+        // 미분류 폴더 생성
+        const maxOrder = bookmarks.length ? Math.max(...bookmarks.map(b => b.order || 0)) + 1 : 0;
+        const newFolder = {
+          id: generateUUID(),
+          title: UNCATEGORIZED_FOLDER_NAME,
+          expanded: true,
+          order: maxOrder,
+          createdAt: new Date().toISOString(),
+          bookmarks: []
+        };
+        bookmarks = [...bookmarks, newFolder];
         saveBookmarksAndUpdateStore(bookmarks);
       }
     } else {
-      const id = bookmarks.length ? Math.max(0, ...bookmarks.map(b => b.id)) + 1 : 1;
-      bookmarks = [...bookmarks, { id, title: folderName, expanded: false, bookmarks: [] }];
+      // 일반 폴더 생성
+      const maxOrder = bookmarks.length ? Math.max(...bookmarks.map(b => b.order || 0)) + 1 : 0;
+      const newFolder = {
+        id: generateUUID(),
+        title: folderName,
+        expanded: true,
+        order: maxOrder,
+        createdAt: new Date().toISOString(),
+        bookmarks: []
+      };
+      bookmarks = [...bookmarks, newFolder];
       saveBookmarksAndUpdateStore(bookmarks);
     }
   }
@@ -115,6 +164,7 @@
     if (!bookmarkName.trim() || !bookmarkUrl.trim() || !isValidUrl(bookmarkUrl)) return;
     
     const formattedUrl = formatUrl(bookmarkUrl);
+    const faviconUrl = getFaviconUrl(formattedUrl);
     
     // 루트 선택 또는 선택된 폴더에 추가
     if (folderId === null) {
@@ -125,11 +175,23 @@
       // 수정된 북마크 배열 생성
       bookmarks = bookmarks.map(folder => {
         if (folder.id === uncategorizedFolder.id) {
-          const bookmarkId = folder.bookmarks.length ? Math.max(...folder.bookmarks.map(b => b.id)) + 1 : 1;
+          const maxOrder = folder.bookmarks.length 
+            ? Math.max(...folder.bookmarks.map(b => b.order || 0)) + 1 
+            : 0;
+            
+          const newBookmark = {
+            id: generateUUID(),
+            title: bookmarkName,
+            url: formattedUrl,
+            faviconUrl: faviconUrl,
+            order: maxOrder,
+            createdAt: new Date().toISOString()
+          };
+          
           return {
             ...folder,
             expanded: true, // 자동으로 폴더 확장
-            bookmarks: [...folder.bookmarks, { id: bookmarkId, title: bookmarkName, url: formattedUrl }]
+            bookmarks: [...folder.bookmarks, newBookmark]
           };
         }
         return folder;
@@ -138,11 +200,23 @@
       // 선택된 폴더에 추가
       bookmarks = bookmarks.map(folder => {
         if (folder.id === folderId) {
-          const bookmarkId = folder.bookmarks.length ? Math.max(...folder.bookmarks.map(b => b.id)) + 1 : 1;
+          const maxOrder = folder.bookmarks.length 
+            ? Math.max(...folder.bookmarks.map(b => b.order || 0)) + 1 
+            : 0;
+            
+          const newBookmark = {
+            id: generateUUID(),
+            title: bookmarkName,
+            url: formattedUrl,
+            faviconUrl: faviconUrl,
+            order: maxOrder,
+            createdAt: new Date().toISOString()
+          };
+          
           return {
             ...folder,
             expanded: true, // 자동으로 폴더 확장
-            bookmarks: [...folder.bookmarks, { id: bookmarkId, title: bookmarkName, url: formattedUrl }]
+            bookmarks: [...folder.bookmarks, newBookmark]
           };
         }
         return folder;
@@ -151,46 +225,6 @@
     
     // 북마크 변경 후 저장
     saveBookmarksAndUpdateStore(bookmarks);
-  }
-  
-  // 북마크 검색 함수
-  function searchBookmarks() {
-    if (!searchQuery.trim()) {
-      clearSearch();
-      return;
-    }
-    
-    isSearchMode = true;
-    const query = searchQuery.toLowerCase().trim();
-    
-    // 검색 결과를 저장할 임시 배열
-    let results = [];
-    
-    // 각 폴더와 북마크를 검색
-    bookmarks.forEach(folder => {
-      const matchingBookmarks = folder.bookmarks.filter(bookmark => 
-        bookmark.title.toLowerCase().includes(query) || 
-        bookmark.url.toLowerCase().includes(query)
-      );
-      
-      if (matchingBookmarks.length > 0) {
-        // 검색 결과가 있는 폴더만 추가하고 결과에 매칭되는 북마크만 포함
-        results.push({
-          ...folder,
-          expanded: true, // 검색 결과가 있는 폴더는 자동으로 확장
-          bookmarks: matchingBookmarks
-        });
-      }
-    });
-    
-    searchResults = results;
-  }
-  
-  // 검색 초기화
-  function clearSearch() {
-    searchQuery = "";
-    isSearchMode = false;
-    searchResults = [];
   }
   
   // 북마크 편집 시작
@@ -217,6 +251,12 @@
       if (editBookmarkName.trim() && editBookmarkUrl.trim() && isValidUrl(editBookmarkUrl)) {
         const formattedUrl = formatUrl(editBookmarkUrl);
         
+        // URL이 변경되었는지 확인
+        const urlChanged = formattedUrl !== editingBookmark.url;
+        
+        // 파비콘 URL - URL이 변경되었을 때만 업데이트
+        const faviconUrl = urlChanged ? getFaviconUrl(formattedUrl) : editingBookmark.faviconUrl;
+        
         // 폴더 변경이 없는 경우
         if (!newFolderId || newFolderId === editingFolder) {
           bookmarks = bookmarks.map(folder => {
@@ -228,7 +268,9 @@
                     return {
                       ...bookmark,
                       title: editBookmarkName,
-                      url: formattedUrl
+                      url: formattedUrl,
+                      faviconUrl: faviconUrl,
+                      updatedAt: new Date().toISOString()
                     };
                   }
                   return bookmark;
@@ -242,7 +284,9 @@
           const updatedBookmark = {
             ...editingBookmark,
             title: editBookmarkName,
-            url: formattedUrl
+            url: formattedUrl,
+            faviconUrl: faviconUrl,
+            updatedAt: new Date().toISOString()
           };
           
           // 1. 먼저 기존 폴더에서 북마크 제거
@@ -259,10 +303,20 @@
           // 2. 새 폴더에 북마크 추가
           bookmarks = bookmarks.map(folder => {
             if (folder.id === newFolderId) {
+              // 순서 값 구하기
+              const maxOrder = folder.bookmarks.length 
+                ? Math.max(...folder.bookmarks.map(b => b.order || 0)) + 1 
+                : 0;
+                
+              const bookmarkWithOrder = {
+                ...updatedBookmark,
+                order: maxOrder
+              };
+              
               return {
                 ...folder,
                 expanded: true, // 새 폴더는 자동으로 확장
-                bookmarks: [...folder.bookmarks, updatedBookmark]
+                bookmarks: [...folder.bookmarks, bookmarkWithOrder]
               };
             }
             return folder;
@@ -284,7 +338,8 @@
           if (folder.id === editingFolder.id) {
             return {
               ...folder,
-              title: editFolderName
+              title: editFolderName,
+              updatedAt: new Date().toISOString()
             };
           }
           return folder;
@@ -336,8 +391,38 @@
   
   // 북마크 저장 및 스토어 업데이트 함수
   function saveBookmarksAndUpdateStore(bookmarkData) {
-    saveBookmarks(bookmarkData);
-    bookmarksStore.set(bookmarkData);
+    persistBookmarks(bookmarkData);
+  }
+
+  // 드래그 앤 드롭 핸들러 래퍼: 실제 북마크 이동 로직은 기존대로 처리
+  function handleSidebarDragStart(event, itemType, id, folderId) {
+    dndOnDragStart(event, itemType, id, folderId);
+  }
+  function handleSidebarDragOver(event, itemType, id, folderId) {
+    dndOnDragOver(event, itemType, id, folderId, $draggedItemType, $draggedItemId);
+  }
+  function handleSidebarDrop(event, itemType, id, folderId) {
+    dndOnDrop(
+      event, itemType, id, folderId,
+      $draggedItemType, $draggedItemId, $draggedSourceFolderId, $dragOverPosition,
+      () => {
+        try {
+          const updatedBookmarks = handleDragDrop(
+            bookmarks,
+            $draggedItemType,
+            $draggedItemId,
+            $draggedSourceFolderId,
+            itemType,
+            id,
+            folderId,
+            $dragOverPosition
+          );
+          saveBookmarksAndUpdateStore(updatedBookmarks);
+        } catch (error) {
+          console.error('드래그 앤 드롭 처리 중 오류:', error);
+        }
+      }
+    );
   }
 </script>
 
@@ -372,70 +457,43 @@
 {:else}
   <aside class="w-80 border-r h-full flex flex-col">
     <div class="p-4 pb-2">
-      <!-- 상단 검색창 및 버튼 -->
-      <div class="flex items-center space-x-2">
-        <div class="flex-1">
-          <BookmarkSearch
-            bind:searchQuery
-            bind:isSearchMode
-            bind:searchResults
-            onSearch={searchBookmarks}
-            onClearSearch={clearSearch}
-          />
-        </div>
-        
-        <!-- 북마크 추가 버튼 -->
-        <AddBookmarkPopover 
-          {bookmarks}
-          onAddBookmark={addBookmark}
-        />
-        
-        <!-- 폴더 추가 버튼 -->
-        <AddFolderPopover
-          onAddFolder={addFolder}
-        />
-      </div>
+      <!-- 상단 검색/추가 영역 분리: BookmarkSidebarHeader로 대체 예정 -->
+      <BookmarkSidebarHeader
+        searchQuery={$searchQuery}
+        {bookmarks}
+        on:search={e => handleSearch(e.detail)}
+        on:clearSearch={handleClearSearch}
+        on:addBookmark={e => handleAddBookmark(e.detail.folderId, e.detail.name, e.detail.url)}
+        on:addFolder={e => handleAddFolder(e.detail)}
+      />
     </div>
     
     <!-- 북마크 목록 (스크롤 가능) -->
     <div class="flex-1 overflow-hidden px-4">
       <div class="overflow-y-auto bookmark-scrollbar h-full pr-1">
         {#if isLoading}
-          <div class="flex flex-col items-center justify-center h-full text-readable-muted font-medium">
-            <p>북마크 로딩 중...</p>
-          </div>
+          <BookmarkLoadingState />
         {:else if loadError}
-          <div class="flex flex-col items-center justify-center h-full text-sm">
-            <p class="text-error">오류: {loadError}</p>
-            <button 
-              class="mt-2 px-3 py-1 text-xs rounded-md bg-muted hover:bg-muted/80 transition-colors"
-              on:click={refreshData}
-            >
-              다시 시도
-            </button>
-          </div>
-        {:else if isSearchMode && searchResults.length === 0}
-          <div class="flex flex-col items-center justify-center h-full text-readable-muted text-sm">
-            <p>검색 결과가 없습니다.</p>
-          </div>
+          <BookmarkErrorState errorMessage={loadError} onRetry={refreshData} />
+        {:else if $isSearchMode && sortedSearchResults.length === 0}
+          <BookmarkEmptyState message="No search results found." subMessage={null} />
         {:else if bookmarks.length === 0}
-          <div class="flex flex-col items-center justify-center h-full text-readable-muted text-sm">
-            <p>저장된 북마크가 없습니다.</p>
-            <p>오른쪽 상단 버튼으로 북마크를 추가해보세요.</p>
-          </div>
+          <BookmarkEmptyState message="No bookmarks saved." subMessage="Click the button above to add a bookmark." />
         {:else}
-          <ul class="space-y-2 pt-1">
-            {#each (isSearchMode ? searchResults : bookmarks) as folder (folder.id)}
-              <BookmarkFolder
-                {folder}
-                onToggleFolder={toggleFolder}
-                onEditFolder={startEditFolder}
-                onDeleteFolder={deleteFolder}
-                onEditBookmark={startEditBookmark}
-                onDeleteBookmark={deleteBookmark}
-              />
-            {/each}
-          </ul>
+          <BookmarkFolderList
+            folders={$isSearchMode ? sortedSearchResults : sortedBookmarks}
+            draggedItemId={draggedItemId}
+            dragOverItemId={dragOverItemId}
+            dragOverPosition={dragOverPosition}
+            on:toggleFolder={e => toggleFolder(e.detail)}
+            on:editFolder={e => startEditFolder(e.detail)}
+            on:deleteFolder={e => deleteFolder(e.detail)}
+            on:editBookmark={e => startEditBookmark(e.detail.folderId, e.detail.bookmark)}
+            on:deleteBookmark={e => deleteBookmark(e.detail.folderId, e.detail.bookmark)}
+            on:dragStart={e => handleSidebarDragStart(e.detail.event, e.detail.itemType, e.detail.id, e.detail.folderId)}
+            on:dragOver={e => handleSidebarDragOver(e.detail.event, e.detail.itemType, e.detail.id, e.detail.folderId)}
+            on:drop={e => handleSidebarDrop(e.detail.event, e.detail.itemType, e.detail.id, e.detail.folderId)}
+          />
         {/if}
       </div>
     </div>

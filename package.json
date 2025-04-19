@@ -37,6 +37,8 @@
   "dependencies": {
     "axios": "^1.8.4",
     "lucide-svelte": "^0.485.0",
-    "svelte-radix": "^2.0.1"
+    "svelte-dnd-action": "^0.9.60",
+    "svelte-radix": "^2.0.1",
+    "uuid": "^11.1.0"
   }
 }

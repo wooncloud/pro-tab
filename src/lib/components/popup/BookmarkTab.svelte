@@ -4,7 +4,9 @@
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "$lib/components/ui/select";
-  import { UNCATEGORIZED_FOLDER_NAME, loadBookmarks, saveBookmarks, isValidUrl, formatUrl, getOrCreateUncategorizedFolder } from "$lib/components/bookmarks/BookmarkStorage";
+  import { UNCATEGORIZED_FOLDER_NAME, getOrCreateUncategorizedFolder } from "$lib/components/bookmarks/storage/BookmarkModel";
+  import { loadBookmarks, saveBookmarks } from "$lib/components/bookmarks/storage/BookmarkPersistence";
+  import { isValidUrl, formatUrl } from "$lib/components/bookmarks/storage/BookmarkUtils";
   import { Plus } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
 
