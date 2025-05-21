@@ -4,11 +4,23 @@
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "$lib/components/ui/select";
-  import { UNCATEGORIZED_FOLDER_NAME, getOrCreateUncategorizedFolder } from "$lib/components/bookmarks/storage/BookmarkModel";
-  import { loadBookmarks, saveBookmarks } from "$lib/components/bookmarks/storage/BookmarkPersistence";
-  import { isValidUrl, formatUrl } from "$lib/components/bookmarks/storage/BookmarkUtils";
+  // import { UNCATEGORIZED_FOLDER_NAME, getOrCreateUncategorizedFolder } from "$lib/components/bookmarks/storage/BookmarkModel"; // 존재하지 않는 파일
+  // import { loadBookmarks, saveBookmarks } from "$lib/components/bookmarks/storage/BookmarkPersistence"; // 존재하지 않는 파일
+  // import { isValidUrl, formatUrl } from "$lib/components/bookmarks/storage/BookmarkUtils"; // 존재하지 않는 파일
   import { Plus } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+
+  // 임시 상수 및 함수 (실제 구현 필요)
+  const UNCATEGORIZED_FOLDER_NAME = '미분류';
+  function getOrCreateUncategorizedFolder(bookmarks) {
+    // 임시 구현: 항상 새 미분류 폴더 반환 (실제 로직 필요)
+    const uncategorizedFolder = { id: 'uncategorized', title: UNCATEGORIZED_FOLDER_NAME, bookmarks: [] };
+    return { folder: uncategorizedFolder, updatedBookmarks: [...bookmarks, uncategorizedFolder] };
+  }
+  async function loadBookmarks() { /* console.log('loadBookmarks 임시 호출됨'); */ return []; } // bookmarkStore.js 에서 가져오거나 실제 구현 필요
+  async function saveBookmarks(bookmarks) { /* console.log('saveBookmarks 임시 호출됨', bookmarks); */ } // bookmarkStore.js 에서 가져오거나 실제 구현 필요
+  function isValidUrl(url) { /* console.log('isValidUrl 임시 호출됨', url); */ return /^https?:\/\//.test(url); } // 실제 구현 필요
+  function formatUrl(url) { /* console.log('formatUrl 임시 호출됨', url); */ return url; } // 실제 구현 필요
 
   // 이벤트 디스패처 생성
   const dispatch = createEventDispatcher();

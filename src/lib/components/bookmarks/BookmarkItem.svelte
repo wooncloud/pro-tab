@@ -1,108 +1,92 @@
 <script>
-  import * as ContextMenu from "$lib/components/ui/context-menu";
-  import { ExternalLink, Edit, Trash2, Link } from "lucide-svelte";
-  
   export let bookmark;
-  export let folderId;
-  export let onEditBookmark;
-  export let onDeleteBookmark;
-  export let onDragStart = () => {}; // 드래그 시작 이벤트 핸들러
-  export let onDragOver = () => {}; // 드래그 오버 이벤트 핸들러
-  export let onDrop = () => {}; // 드롭 이벤트 핸들러
-  export let onDragLeave = () => {}; // 드래그 떠남 이벤트 핸들러
-  export let isDragging = false; // 현재 드래그 중인지 여부
-  export let isDropTarget = false; // 현재 드롭 대상인지 여부
-  export let dropPosition = 'inside'; // 드롭 위치 (before, inside, after)
-  
-  // 파비콘 로드 오류 처리
+  import { Link } from 'lucide-svelte';
+  import * as ContextMenu from "$lib/components/ui/context-menu";
+  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+  import { activeContextMenuId } from './contextMenuStore.js';
+  import { writable } from 'svelte/store';
+
+  const dispatch = createEventDispatcher();
   let faviconError = false;
-  
+  let isMenuOpen = false; // 로컬 상태로 메뉴 열림 관리
+  const menuId = bookmark.id; // 각 메뉴의 고유 ID
+
+  let unsubscribe;
+
+  onMount(() => {
+    unsubscribe = activeContextMenuId.subscribe(id => {
+      if (id !== menuId && isMenuOpen) {
+        isMenuOpen = false; // 다른 메뉴가 열리면 이 메뉴를 닫음
+      }
+    });
+  });
+
+  onDestroy(() => {
+    if (unsubscribe) {
+      unsubscribe();
+    }
+  });
+
   function handleFaviconError() {
     faviconError = true;
   }
 
-  // 드래그 시작 처리
-  function handleDragStart(event) {
-    event.dataTransfer.setData('text/plain', JSON.stringify({
-      id: bookmark.id,
-      type: 'bookmark',
-      folderId: folderId
-    }));
-    onDragStart(event, 'bookmark', bookmark.id, folderId);
+  function dispatchEdit(event) {
+    // event.preventDefault(); // ContextMenu.Item의 on:select는 기본 동작이 없으므로 필요 X
+    dispatch('edit', bookmark);
+    isMenuOpen = false; // 메뉴 항목 선택 후 닫기
   }
 
-  // 드래그 오버 처리
-  function handleDragOver(event) {
+  function dispatchDelete(event) {
+    // event.preventDefault();
+    dispatch('delete', bookmark);
+    isMenuOpen = false; // 메뉴 항목 선택 후 닫기
+  }
+
+  function handleClick(event) {
+    if (event.ctrlKey || event.metaKey || event.button === 1) {
+      return; 
+    }
     event.preventDefault();
-    onDragOver(event, 'bookmark', bookmark.id, folderId);
+    window.location.href = bookmark.url;
   }
 
-  // 드롭 처리
-  function handleDrop(event) {
-    event.preventDefault();
-    onDrop(event, 'bookmark', bookmark.id, folderId);
+  function handleMenuOpenChange(event) {
+    const newOpenState = event.detail.open;
+    if (newOpenState) {
+      activeContextMenuId.set(menuId); // 이 메뉴가 열렸음을 알림
+    }
+    isMenuOpen = newOpenState;
   }
 
-  // 드래그 떠남 처리
-  function handleDragLeave(event) {
-    onDragLeave(event);
-  }
-
-  // 드롭 위치에 따른 CSS 클래스 계산
-  $: dropPositionClass = isDropTarget 
-    ? dropPosition === 'before' 
-      ? 'border-t-2 border-primary' 
-      : dropPosition === 'after' 
-        ? 'border-b-2 border-primary' 
-        : 'bg-primary/10'
-    : '';
 </script>
 
-<li
-  draggable="true"
-  on:dragstart={handleDragStart}
-  on:dragover={handleDragOver}
-  on:drop={handleDrop}
-  on:dragleave={handleDragLeave}
-  class="transition-opacity {isDragging ? 'opacity-50' : ''} {dropPositionClass}"
->
-  <ContextMenu.Root>
-    <ContextMenu.Trigger>
-      <a 
-        href={bookmark.url} 
-        class="flex items-center p-2 hover:bg-muted/70 rounded-md text-sm group transition-colors duration-200" 
-        target="_blank" 
-        rel="noopener noreferrer"
-      >
-        {#if bookmark.faviconUrl && !faviconError}
-          <img 
-            src={bookmark.faviconUrl} 
-            alt="" 
-            class="h-4 w-4 mr-1.5 flex-shrink-0"
-            on:error={handleFaviconError}
-          />
-        {:else}
-          <Link class="h-3.5 w-3.5 mr-1.5 text-primary opacity-70 group-hover:opacity-100 flex-shrink-0" />
-        {/if}
-        <span class="font-medium group-hover:text-primary truncate">{bookmark.title}</span>
-      </a>
-    </ContextMenu.Trigger>
-    <ContextMenu.Content>
-      <ContextMenu.Item on:click={() => window.open(bookmark.url, '_blank')}>
-        <ExternalLink class="h-4 w-4 mr-2" />
-        새 탭에서 열기
-      </ContextMenu.Item>
-      <ContextMenu.Item on:click={() => onEditBookmark(folderId, bookmark)}>
-        <Edit class="h-4 w-4 mr-2" />
-        북마크 편집
-      </ContextMenu.Item>
-      <ContextMenu.Item 
-        class="text-destructive focus:text-destructive" 
-        on:click={() => onDeleteBookmark(folderId, bookmark)}
-      >
-        <Trash2 class="h-4 w-4 mr-2" />
-        북마크 삭제
-      </ContextMenu.Item>
-    </ContextMenu.Content>
-  </ContextMenu.Root>
-</li> 
+<ContextMenu.Root bind:open={isMenuOpen} onOpenChange={handleMenuOpenChange}>
+  <ContextMenu.Trigger>
+    <a 
+      href={bookmark.url} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      class="flex items-center space-x-2 p-2 rounded-md hover:bg-muted cursor-pointer no-underline text-current"
+      on:click={handleClick} 
+      draggable="false"
+    >
+      {#if bookmark.meta_info && bookmark.meta_info.faviconUrl && !faviconError}
+        <img 
+          src={bookmark.meta_info.faviconUrl} 
+          alt=""
+          class="w-4 h-4"
+          on:error={handleFaviconError}
+          draggable="false"
+        />
+      {:else}
+        <Link class="w-4 h-4 text-muted-foreground" />
+      {/if}
+      <span class="text-sm truncate" draggable="false">{bookmark.name}</span>
+    </a>
+  </ContextMenu.Trigger>
+  <ContextMenu.Content class="w-48">
+    <ContextMenu.Item on:select={dispatchEdit}>편집</ContextMenu.Item>
+    <ContextMenu.Item on:select={dispatchDelete} class="text-destructive">삭제</ContextMenu.Item>
+  </ContextMenu.Content>
+</ContextMenu.Root> 
